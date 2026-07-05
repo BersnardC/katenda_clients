@@ -1,8 +1,9 @@
 {
-  "name": "@repo/ui",
+  "name": "@katenda_clients/ui",
   "version": "0.0.0",
   "private": true,
   "exports": {
+    ".": "./src/index.tsx",
     "./*": "./src/*.tsx"
   },
   "scripts": {
