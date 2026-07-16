@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function Login() {
   const { login, user } = useAuth();

@@ -8,7 +8,7 @@ import Publish from "./pages/Publish";
 import ProtectedRoute from "./components/ProtectedRoute";
 /* import reactLogo from './assets/react.svg' // <img src={reactLogo} className="logo react" alt="React logo" />*/
 import './App.css'
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "@katenda_clients/ui";
 import { BrowserRouter } from "react-router-dom";
 import Nav from "./components/Nav";
 import { Button } from "@katenda_clients/ui";
@@ -22,7 +22,7 @@ function App() {
         <Nav />
 
         <div className="max-w-3xl mx-auto p-4">
-          Button from UI package: <Button appName="Bers">Click me</Button>
+          <Button>Click me</Button>
           <Routes>
             <Route path="/" element={<Posts />} />
             <Route path="/login" element={<Login />} />
@@ -39,12 +39,7 @@ function App() {
           </Routes>
         </div>
 
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: { borderRadius: 8 },
-          }}
-        />
+        <Toaster />
 
       </AuthProvider>
     </BrowserRouter>

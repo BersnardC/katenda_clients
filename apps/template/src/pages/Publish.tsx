@@ -1,7 +1,7 @@
 // src/pages/Publish.tsx
 import { useState } from "react";
 import { postService } from "../services/postService";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function Publish() {
   const [title, setTitle] = useState("");
