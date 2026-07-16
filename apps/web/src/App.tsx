@@ -1,50 +1,67 @@
-//import { useState } from 'react'
-import { Routes, Route, } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Posts from "./pages/Posts";
-import Publish from "./pages/Publish";
-import ProtectedRoute from "./components/ProtectedRoute";
-/* import reactLogo from './assets/react.svg' // <img src={reactLogo} className="logo react" alt="React logo" />*/
-import './App.css'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import { Toaster } from "@katenda_clients/ui";
-import { BrowserRouter } from "react-router-dom";
-import Nav from "./components/Nav";
-import { Button } from "@katenda_clients/ui";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/lib/theme";
+import { LanguageProvider } from "@/lib/i18n";
+import AuthLayout from "@/layouts/AuthLayout";
+import AppLayout from "@/layouts/AppLayout";
+import Onboarding from "@/pages/Onboarding";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import RecoverPassword from "@/pages/RecoverPassword";
+import Dashboard from "@/pages/Dashboard";
+import "@/App.css";
 
-function App() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-
-        <Nav />
-
-        <div className="max-w-3xl mx-auto p-4">
-          <Button>Click me</Button>
-          <Routes>
-            <Route path="/" element={<Posts />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            <Route
-              path="/publish"
-              element={
-                <ProtectedRoute>
-                  <Publish />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-
-        <Toaster />
-
-      </AuthProvider>
-    </BrowserRouter>
-
-  )
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-4 text-muted-foreground">Cargando...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
 }
 
-export default App
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <LanguageProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route element={<AuthLayout />}>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/recover-password" element={<RecoverPassword />} />
+                </Route>
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<Dashboard />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/onboarding" replace />} />
+              </Routes>
+              <Toaster />
+            </AuthProvider>
+          </BrowserRouter>
+        </LanguageProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

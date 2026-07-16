@@ -44,6 +44,10 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-neon: var(--neon);
+  --color-neon-foreground: var(--neon-foreground);
 }
 
 :root {
@@ -80,6 +84,10 @@
   --sidebar-accent-foreground: oklch(0.145 0 0);
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: oklch(0.696 0.17 162.48);
+  --brand: oklch(0.696 0.17 162.48);
+  --brand-foreground: oklch(0.145 0 0);
+  --neon: oklch(0.645 0.246 16.439);
+  --neon-foreground: oklch(0.985 0 0);
 }
 
 .dark {
@@ -115,6 +123,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.696 0.17 162.48);
+  --brand: oklch(0.696 0.17 162.48);
+  --brand-foreground: oklch(0.145 0 0);
+  --neon: oklch(0.645 0.246 16.439);
+  --neon-foreground: oklch(0.985 0 0);
 }
 
 @layer base {
@@ -127,4 +139,32 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
   }
+}
+
+@utility glass-blur {
+  backdrop-filter: blur(20px) saturate(180%);
+  background: color-mix(in oklab, var(--color-background) 70%, transparent);
+}
+
+@keyframes katenda-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility fade-up {
+  animation: katenda-fade-in 0.4s ease-out both;
+}
+
+@keyframes katenda-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@utility skeleton-shimmer {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--color-card) 100%, transparent),
+    color-mix(in oklab, var(--color-muted) 100%, transparent),
+    color-mix(in oklab, var(--color-card) 100%, transparent));
+  background-size: 800px 100%;
+  animation: katenda-shimmer 1.4s linear infinite;
 }
