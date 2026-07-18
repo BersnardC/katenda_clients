@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService, type LoginDto, type RegisterDto } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -60,6 +60,7 @@ function persistUser(user: User | null) {
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(getStoredUser);
   const [token, setToken] = useState<string | null>(getStoredToken);
   const [loading, setLoading] = useState(false);
@@ -112,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       persistToken(null);
       persistUser(null);
+      queryClient.clear();
       toast.success("Sesión cerrada");
     },
   });
