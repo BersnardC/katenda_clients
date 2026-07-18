@@ -202,7 +202,8 @@ export default function Products() {
         onOpenChange={() => setDeleteTarget(null)}
         title={t("products.delete_title")}
         description={t("products.delete_desc")}
-        confirmLabel={t("products.delete_title")}
+        confirmLabel={t("products.delete_confirm")}
+        loading={deleteProduct.isPending}
         variant="destructive"
         onConfirm={handleDelete}
       />

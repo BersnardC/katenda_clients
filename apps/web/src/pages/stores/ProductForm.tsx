@@ -74,6 +74,7 @@ export default function ProductForm() {
         if (files.length > 0) {
           await mediaService.create("products", productUuid, files);
           qc.invalidateQueries({ queryKey: ["media", "products", productUuid] });
+          qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
         }
       }
       navigate(fromList ? "/products" : `/stores/${storeUuid}`);

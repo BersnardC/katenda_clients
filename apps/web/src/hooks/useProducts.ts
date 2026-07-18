@@ -53,7 +53,7 @@ export function useDeleteProduct() {
     mutationFn: ({ storeUuid, uuid }: { storeUuid: string; uuid: string }) =>
       productService.hardDelete(storeUuid, uuid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["all-products"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
       toast.success("Producto eliminado permanentemente");
     },
     onError: (err: AxiosError<{ message: string }>) => {
