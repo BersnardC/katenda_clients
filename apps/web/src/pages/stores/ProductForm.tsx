@@ -28,7 +28,7 @@ export default function ProductForm() {
   const existing = products?.find((p) => p.uuid === uuid);
 
   const [form, setForm] = useState({
-    name: "", slug: "", price: 0, stock: 0, description: "", code: "", category_id: null as number | null,
+    name: "", slug: "", price: "", stock: "", description: "", code: "", category_id: null as number | null,
   });
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -38,8 +38,8 @@ export default function ProductForm() {
       setForm({
         name: existing.name,
         slug: existing.slug,
-        price: Number(existing.price),
-        stock: existing.stock,
+        price: String(existing.price),
+        stock: String(existing.stock),
         description: existing.description || "",
         code: existing.code || "",
         category_id: existing.category_id,
@@ -64,12 +64,17 @@ export default function ProductForm() {
       return;
     }
     try {
+      const data = {
+        ...form,
+        price: form.price === "" ? 0 : parseFloat(form.price),
+        stock: form.stock === "" ? 0 : parseInt(form.stock, 10),
+      };
       let productUuid: string;
       if (isEdit) {
-        await updateProduct.mutateAsync({ uuid: uuid!, data: form });
+        await updateProduct.mutateAsync({ uuid: uuid!, data });
         productUuid = uuid!;
       } else {
-        const res = await createProduct.mutateAsync(form);
+        const res = await createProduct.mutateAsync(data);
         productUuid = res.data.product.uuid;
         if (files.length > 0) {
           await mediaService.create("products", productUuid, files);
@@ -86,7 +91,7 @@ export default function ProductForm() {
   const isPending = createProduct.isPending || updateProduct.isPending;
 
   return (
-    <div className="max-w-xl">
+    <div>
       {!fromList && (
         <button
           onClick={() => navigate(`/stores/${storeUuid}`)}
@@ -103,6 +108,7 @@ export default function ProductForm() {
         </Button>
       </PageHeader>
 
+      <div className="max-w-xl mx-auto">
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,11 +131,11 @@ export default function ProductForm() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Precio ($)</Label>
-                <Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required />
+                <Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
               </div>
               <div className="space-y-1.5">
                 <Label>Stock</Label>
-                <Input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+                <Input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -191,6 +197,7 @@ export default function ProductForm() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
