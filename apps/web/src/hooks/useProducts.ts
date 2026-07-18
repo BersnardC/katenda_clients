@@ -47,6 +47,23 @@ export function useUpdateProduct(storeUuid: string) {
   });
 }
 
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ storeUuid, uuid }: { storeUuid: string; uuid: string }) =>
+      productService.hardDelete(storeUuid, uuid),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["all-products"] });
+      toast.success("Producto eliminado permanentemente");
+    },
+    onError: (err: AxiosError<{ message: string }>) => {
+      const msg = err.response?.data?.message || "Error al eliminar producto";
+      console.error("[useDeleteProduct]", msg, err.response?.data);
+      toast.error(msg);
+    },
+  });
+}
+
 export function useDeactivateProduct(storeUuid: string) {
   const qc = useQueryClient();
   return useMutation({

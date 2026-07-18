@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { Button, Input, Label, Card, CardContent } from "@katenda_clients/ui";
+import { useActiveStore } from "@/contexts/StoreContext";
 import { useStore } from "@/hooks/useStores";
 import { useProducts, useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
@@ -11,14 +12,17 @@ import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
 export default function ProductForm() {
-  const { storeUuid, uuid } = useParams();
+  const { storeUuid: paramStoreUuid, uuid } = useParams();
+  const { activeStore } = useActiveStore();
   const navigate = useNavigate();
   const isEdit = !!uuid;
-  const { data: store } = useStore(storeUuid || "");
-  const { data: products } = useProducts(storeUuid || "");
+  const fromList = !paramStoreUuid;
+  const storeUuid = paramStoreUuid || activeStore?.uuid || "";
+  const { data: store } = useStore(storeUuid);
+  const { data: products } = useProducts(storeUuid);
   const { data: categories } = useCategories();
-  const createProduct = useCreateProduct(storeUuid || "");
-  const updateProduct = useUpdateProduct(storeUuid || "");
+  const createProduct = useCreateProduct(storeUuid);
+  const updateProduct = useUpdateProduct(storeUuid);
   const qc = useQueryClient();
 
   const existing = products?.find((p) => p.uuid === uuid);
@@ -54,6 +58,11 @@ export default function ProductForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!storeUuid) {
+      toast.error("No hay tienda activa");
+      navigate("/products");
+      return;
+    }
     try {
       let productUuid: string;
       if (isEdit) {
@@ -67,7 +76,7 @@ export default function ProductForm() {
           qc.invalidateQueries({ queryKey: ["media", "products", productUuid] });
         }
       }
-      navigate(`/stores/${storeUuid}`);
+      navigate(fromList ? "/products" : `/stores/${storeUuid}`);
     } catch {
       // toast ya mostrado por el hook mutation
     }
@@ -77,16 +86,18 @@ export default function ProductForm() {
 
   return (
     <div className="max-w-xl">
-      <button
-        onClick={() => navigate(`/stores/${storeUuid}`)}
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver a {store?.name || "tienda"}
-      </button>
+      {!fromList && (
+        <button
+          onClick={() => navigate(`/stores/${storeUuid}`)}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver a {store?.name || "tienda"}
+        </button>
+      )}
 
       <PageHeader title={isEdit ? "Editar producto" : "Nuevo producto"}>
-        <Button variant="outline" onClick={() => navigate(`/stores/${storeUuid}`)} className="cursor-pointer">
+        <Button variant="outline" onClick={() => navigate(fromList ? "/products" : `/stores/${storeUuid}`)} className="cursor-pointer">
           Cancelar
         </Button>
       </PageHeader>

@@ -39,4 +39,6 @@ export const productService = {
     api.put<{ product: Product }>(`/stores/${storeUuid}/products/${uuid}`, data),
   destroy: (storeUuid: string, uuid: string) =>
     api.delete(`/stores/${storeUuid}/products/${uuid}`),
+  hardDelete: (storeUuid: string, uuid: string) =>
+    api.post(`/stores/${storeUuid}/products/${uuid}/delete`),
 };

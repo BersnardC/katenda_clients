@@ -113,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       persistToken(null);
       persistUser(null);
+      localStorage.removeItem("katenda.active_store");
       queryClient.clear();
       toast.success("Sesión cerrada");
     },

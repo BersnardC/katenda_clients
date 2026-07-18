@@ -1,19 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Plus, Search, Pencil, Trash2, Upload, X, Store } from "lucide-react";
-import {
-  Button, Input, Label, Skeleton, Textarea,
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@katenda_clients/ui";
+import { Package, Plus, Search, Pencil, Trash2, Store } from "lucide-react";
+import { Button, Input, Skeleton } from "@katenda_clients/ui";
 import { useI18n } from "@/lib/i18n";
 import { useAllProducts, type ProductWithStore } from "@/hooks/useAllProducts";
-import { useActiveStore } from "@/contexts/StoreContext";
 import { useCategories } from "@/hooks/useCategories";
-import { useCreateProduct, useDeactivateProduct } from "@/hooks/useProducts";
-import { mediaService } from "@/services/mediaService";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useDeleteProduct } from "@/hooks/useProducts";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -21,75 +13,25 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 export default function Products() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { activeStore } = useActiveStore();
   const { data: products, isLoading, stores } = useAllProducts();
   const { data: categories } = useCategories();
-  const createProduct = useCreateProduct(activeStore?.uuid || "");
-  const deactivateProduct = useDeactivateProduct(activeStore?.uuid || "");
-  const qc = useQueryClient();
+  const deleteProduct = useDeleteProduct();
 
   const [q, setQ] = useState("");
-  const [open, setOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductWithStore | null>(null);
-  const [form, setForm] = useState({ name: "", price: "", description: "" });
-  const [categoryId, setCategoryId] = useState<string>("");
-  const [files, setFiles] = useState<File[]>([]);
-  const [dragOver, setDragOver] = useState(false);
 
   const storeCount = stores?.length ?? 0;
   const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(q.toLowerCase()),
   );
 
-  const resetForm = () => {
-    setForm({ name: "", price: "", description: "" });
-    setCategoryId("");
-    setFiles([]);
-  };
-
-  const addFiles = (list: FileList | null) => {
-    if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)]);
-  };
-
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSave = async () => {
-    if (!form.name || !form.price) {
-      toast.error(t("error.required"));
-      return;
-    }
-    if (!activeStore) {
-      toast.error("No hay tienda activa");
-      return;
-    }
-    try {
-      const res = await createProduct.mutateAsync({
-        name: form.name,
-        slug: form.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
-        price: Number(form.price),
-        description: form.description,
-        category_id: categoryId ? Number(categoryId) : null,
-      });
-      const productUuid = res.data.product.uuid;
-      if (files.length > 0) {
-        await mediaService.create("products", productUuid, files);
-        qc.invalidateQueries({ queryKey: ["media", "products", productUuid] });
-      }
-      toast.success("Producto creado correctamente");
-      setOpen(false);
-      resetForm();
-    } catch {
-      // toast ya mostrado por el hook mutation
-    }
-  };
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await deactivateProduct.mutateAsync(deleteTarget.uuid);
+      await deleteProduct.mutateAsync({
+        storeUuid: deleteTarget.store_uuid,
+        uuid: deleteTarget.uuid,
+      });
       setDeleteTarget(null);
     } catch {
       // toast ya mostrado por el hook
@@ -102,114 +44,13 @@ export default function Products() {
         title={t("products.title")}
         description={`${products.length} productos en ${storeCount} tiendas`}
       >
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="bg-accent text-accent-foreground hover:opacity-90 h-11 font-semibold shadow-lg shadow-accent/20 cursor-pointer">
-              <Plus className="h-4 w-4 mr-1" />
-              {t("products.add")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-card max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{t("products.add")}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>{t("products.name")}</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ej. Filtro de aceite K90"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("products.price")} (USD)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("products.category")}</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sin categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={String(cat.id)}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("products.desc")}</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${dragOver ? "border-brand bg-brand/5" : "border-border"}`}
-                onClick={() => document.getElementById("product-files")?.click()}
-              >
-                <input
-                  id="product-files"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => addFiles(e.target.files)}
-                />
-                <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">{t("products.photos")}</p>
-                {files.length > 0 && (
-                  <div className="flex gap-2 mt-3 flex-wrap justify-center">
-                    {files.map((f, i) => (
-                      <div key={i} className="relative">
-                        <img
-                          src={URL.createObjectURL(f)}
-                          className="h-14 w-14 rounded-lg object-cover"
-                          alt=""
-                        />
-                        <button
-                          onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                          className="absolute -top-1 -right-1 h-5 w-5 grid place-items-center bg-accent text-accent-foreground rounded-full"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                onClick={() => { setOpen(false); resetForm(); }}
-              >
-                {t("products.cancel")}
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={createProduct.isPending}
-                className="bg-brand text-brand-foreground hover:opacity-90"
-              >
-                {createProduct.isPending ? "Guardando..." : t("products.save")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button
+          onClick={() => navigate("/products/new")}
+          className="bg-accent text-accent-foreground hover:opacity-90 h-11 font-semibold shadow-lg shadow-accent/20 cursor-pointer"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          {t("products.add")}
+        </Button>
       </PageHeader>
 
       {/* Search */}
@@ -284,7 +125,7 @@ export default function Products() {
                   <tr
                     key={`${product.store_uuid}-${product.uuid}`}
                     className="border-t border-border hover:bg-background/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/stores/${product.store_uuid}/products/${product.uuid}`)}
+                    onClick={() => navigate(`/products/${product.uuid}`)}
                   >
                     <td className="p-3">
                       <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
@@ -331,7 +172,7 @@ export default function Products() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/stores/${product.store_uuid}/products/${product.uuid}/edit`);
+                            navigate(`/products/${product.uuid}/edit`);
                           }}
                           className="h-8 w-8 grid place-items-center rounded-lg hover:bg-muted text-muted-foreground"
                         >

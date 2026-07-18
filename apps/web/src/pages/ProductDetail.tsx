@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Skeleton } from "@katenda_clients/ui";
+import { useActiveStore } from "@/contexts/StoreContext";
 import { useStore } from "@/hooks/useStores";
 import { useProducts, useUpdateProduct, useDeactivateProduct } from "@/hooks/useProducts";
 import { useMedia, useAddMedia, useDeleteMedia } from "@/hooks/useMedia";
@@ -10,15 +11,18 @@ import PageHeader from "@/components/PageHeader";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ProductDetail() {
-  const { storeUuid, uuid } = useParams<{ storeUuid: string; uuid: string }>();
+  const { storeUuid: paramStoreUuid, uuid } = useParams<{ storeUuid?: string; uuid: string }>();
+  const { activeStore } = useActiveStore();
   const navigate = useNavigate();
-  const { data: store } = useStore(storeUuid || "");
-  const { data: products } = useProducts(storeUuid || "");
+  const fromList = !paramStoreUuid;
+  const storeUuid = paramStoreUuid || activeStore?.uuid || "";
+  const { data: store } = useStore(storeUuid);
+  const { data: products } = useProducts(storeUuid);
   const { data: media, isLoading: loadingMedia } = useMedia("products", uuid || "");
   const addMedia = useAddMedia("products", uuid || "");
   const deleteMedia = useDeleteMedia("products", uuid || "");
-  const updateProduct = useUpdateProduct(storeUuid || "");
-  const deactivateProduct = useDeactivateProduct(storeUuid || "");
+  const updateProduct = useUpdateProduct(storeUuid);
+  const deactivateProduct = useDeactivateProduct(storeUuid);
   const { data: categories } = useCategories();
 
   const product = products?.find((p) => p.uuid === uuid);
@@ -60,11 +64,11 @@ export default function ProductDetail() {
   return (
     <div className="max-w-3xl space-y-6">
       <button
-        onClick={() => navigate(`/stores/${storeUuid}`)}
+        onClick={() => navigate(fromList ? "/products" : `/stores/${storeUuid}`)}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Volver a {store?.name || "tienda"}
+        {fromList ? "Volver a productos" : `Volver a ${store?.name || "tienda"}`}
       </button>
 
       <PageHeader title={product.name}>
@@ -209,7 +213,7 @@ export default function ProductDetail() {
         description="El producto dejará de ser visible en la tienda."
         confirmLabel="Desactivar"
         variant="destructive"
-        onConfirm={() => { deactivateProduct.mutate(product.uuid); navigate(`/stores/${storeUuid}`); }}
+        onConfirm={() => { deactivateProduct.mutate(product.uuid); navigate(fromList ? "/products" : `/stores/${storeUuid}`); }}
       />
     </div>
   );

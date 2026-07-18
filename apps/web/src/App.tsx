@@ -54,6 +54,9 @@ function App() {
                 </Route>
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/products/:uuid/edit" element={<ProductForm />} />
+                  <Route path="/products/:uuid" element={<ProductDetail />} />
+                  <Route path="/products/new" element={<ProductForm />} />
                   <Route path="/products" element={<Products />} />
                   <Route path="/stores" element={<StoreList />} />
                   <Route path="/stores/new" element={<StoreForm />} />
