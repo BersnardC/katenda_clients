@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
-import { Button, Input, Label, Card, CardContent, Combobox } from "@katenda_clients/ui";
+import { Button, Input, Label, Card, CardContent, Combobox, Skeleton } from "@katenda_clients/ui";
 import { useActiveStore } from "@/contexts/StoreContext";
 import { useStore } from "@/hooks/useStores";
 import { useProducts, useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { usePlanLimit } from "@/hooks/useAccount";
+import { useMedia, useDeleteMedia } from "@/hooks/useMedia";
 import { mediaService } from "@/services/mediaService";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,6 +27,9 @@ export default function ProductForm() {
   const updateProduct = useUpdateProduct(storeUuid);
   const qc = useQueryClient();
 
+  const { data: existingMedia, isLoading: loadingMedia } = useMedia("products", uuid || "");
+  const deleteMedia = useDeleteMedia("products", uuid || "");
+
   const existing = products?.find((p) => p.uuid === uuid);
 
   const [form, setForm] = useState({
@@ -34,6 +38,7 @@ export default function ProductForm() {
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
+  const existingCount = existingMedia?.length ?? 0;
   const maxImages = usePlanLimit("media_per_product");
   const { data: currentProducts } = useProducts(storeUuid);
   const maxProducts = usePlanLimit("products");
@@ -56,9 +61,9 @@ export default function ProductForm() {
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const incoming = Array.from(list);
-    const total = files.length + incoming.length;
+    const total = existingCount + files.length + incoming.length;
     if (maxImages !== undefined && maxImages !== -1 && total > maxImages) {
-      const allowed = maxImages - files.length;
+      const allowed = maxImages - (existingCount + files.length);
       if (allowed <= 0) {
         toast.warning(`Límite de ${maxImages} imágenes por producto.`);
         return;
@@ -94,11 +99,11 @@ export default function ProductForm() {
       } else {
         const res = await createProduct.mutateAsync(data);
         productUuid = res.data.product.uuid;
-        if (files.length > 0) {
-          await mediaService.create("products", productUuid, files);
-          qc.invalidateQueries({ queryKey: ["media", "products", productUuid] });
-          qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
-        }
+      }
+      if (files.length > 0) {
+        await mediaService.create("products", productUuid, files);
+        qc.invalidateQueries({ queryKey: ["media", "products", productUuid] });
+        qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
       }
       navigate(fromList ? "/products" : `/stores/${storeUuid}`);
     } catch {
@@ -190,7 +195,9 @@ export default function ProductForm() {
               />
             </div>
 
-            {!isEdit && (
+            <div className="space-y-3">
+              <Label>Imágenes</Label>
+
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -202,25 +209,45 @@ export default function ProductForm() {
                 <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Arrastra imágenes o haz clic para seleccionar</p>
                 {maxImages !== undefined && maxImages !== -1 && (
-                  <p className={`text-xs mt-1 ${files.length >= maxImages ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                    {files.length}/{maxImages} imágenes
+                  <p className={`text-xs mt-1 ${existingCount + files.length >= maxImages ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    {existingCount + files.length}/{maxImages} imágenes
                   </p>
                 )}
-                {files.length > 0 && (
-                  <div className="flex gap-2 mt-3 flex-wrap justify-center">
-                    {files.map((f, i) => (
-                      <div key={i} className="relative">
-                        <img src={URL.createObjectURL(f)} className="h-14 w-14 rounded-lg object-cover" alt="" />
-                        <button onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                          className="absolute -top-1 -right-1 h-5 w-5 grid place-items-center bg-accent text-accent-foreground rounded-full">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            )}
+
+              {isEdit && loadingMedia ? (
+                <div className="flex gap-2 mt-3 flex-wrap justify-center">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-14 rounded-lg" />)}
+                </div>
+              ) : existingCount + files.length > 0 ? (
+                <div className="flex gap-2 mt-3 flex-wrap justify-center">
+                  {existingMedia?.map((m) => (
+                    <div key={m.uuid} className="relative">
+                      <img src={m.url} className="h-14 w-14 rounded-lg object-cover" alt="" />
+                      <button
+                        type="button"
+                        onClick={() => deleteMedia.mutate(m.uuid)}
+                        className="absolute -top-1 -right-1 h-5 w-5 grid place-items-center bg-accent text-accent-foreground rounded-full"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {files.map((f, i) => (
+                    <div key={i} className="relative">
+                      <img src={URL.createObjectURL(f)} className="h-14 w-14 rounded-lg object-cover" alt="" />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                        className="absolute -top-1 -right-1 h-5 w-5 grid place-items-center bg-accent text-accent-foreground rounded-full"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
 
             <Button type="submit" disabled={isPending || (!isEdit && atMaxProducts)} className="w-full h-10 bg-accent text-accent-foreground hover:opacity-90 font-semibold cursor-pointer">
               {isPending
