@@ -36,8 +36,14 @@ export function useSubscription() {
       const res = await accountService.subscription();
       return res.data.subscription;
     },
+    staleTime: Infinity,
     retry: false,
   });
+}
+
+export function usePlanLimit(feature: string): number | undefined {
+  const { data: subscription } = useSubscription();
+  return subscription?.plan?.limits?.find(l => l.feature === feature)?.limit_value;
 }
 
 export function usePlans() {

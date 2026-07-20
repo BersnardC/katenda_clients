@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
-import { Button, Input, Label, Card, CardContent } from "@katenda_clients/ui";
+import { Button, Input, Label, Card, CardContent, Combobox } from "@katenda_clients/ui";
 import { useActiveStore } from "@/contexts/StoreContext";
 import { useStore } from "@/hooks/useStores";
 import { useProducts, useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
+import { usePlanLimit } from "@/hooks/useAccount";
 import { mediaService } from "@/services/mediaService";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,6 +34,11 @@ export default function ProductForm() {
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
+  const maxImages = usePlanLimit("media_per_product");
+  const { data: currentProducts } = useProducts(storeUuid);
+  const maxProducts = usePlanLimit("products");
+  const atMaxProducts = maxProducts !== undefined && maxProducts !== -1 && (currentProducts?.length ?? 0) >= maxProducts;
+
   useEffect(() => {
     if (existing) {
       setForm({
@@ -49,7 +55,19 @@ export default function ProductForm() {
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)]);
+    const incoming = Array.from(list);
+    const total = files.length + incoming.length;
+    if (maxImages !== undefined && maxImages !== -1 && total > maxImages) {
+      const allowed = maxImages - files.length;
+      if (allowed <= 0) {
+        toast.warning(`Límite de ${maxImages} imágenes por producto.`);
+        return;
+      }
+      setFiles((prev) => [...prev, ...incoming.slice(0, allowed)]);
+      toast.warning(`Solo se agregaron ${allowed} de ${incoming.length} imágenes. Máximo ${maxImages} por producto.`);
+    } else {
+      setFiles((prev) => [...prev, ...incoming]);
+    }
   };
 
   const removeFile = (index: number) => {
@@ -109,6 +127,12 @@ export default function ProductForm() {
       </PageHeader>
 
       <div className="max-w-xl mx-auto">
+      {!isEdit && atMaxProducts && (
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg p-4 mb-4 text-center">
+          Has alcanzado el límite de {maxProducts} productos de tu plan actual.
+          {maxProducts !== -1 && " Elimina algunos productos o cambia de plan para crear más."}
+        </div>
+      )}
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -144,14 +168,16 @@ export default function ProductForm() {
             </div>
             <div className="space-y-1.5">
               <Label>Categoría</Label>
-              <select
-                value={form.category_id ?? ""}
-                onChange={(e) => setForm({ ...form, category_id: e.target.value ? Number(e.target.value) : null })}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm md:text-sm"
-              >
-                <option value="">Sin categoría</option>
-                {categories?.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-              </select>
+              <Combobox
+                items={categories?.map((c) => ({ value: c.id, label: c.name })) ?? []}
+                value={form.category_id}
+                onChange={(val) => setForm({ ...form, category_id: val as number | null })}
+                placeholder="Sin categoría"
+                searchPlaceholder="Buscar categoría..."
+                clearable
+                clearLabel="Sin categoría"
+                popoverClassName="bg-card border-border shadow-lg"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Descripción</Label>
@@ -175,6 +201,11 @@ export default function ProductForm() {
                 <input id="product-files" type="file" multiple accept="image/*" className="hidden" onChange={(e) => addFiles(e.target.files)} />
                 <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Arrastra imágenes o haz clic para seleccionar</p>
+                {maxImages !== undefined && maxImages !== -1 && (
+                  <p className={`text-xs mt-1 ${files.length >= maxImages ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    {files.length}/{maxImages} imágenes
+                  </p>
+                )}
                 {files.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap justify-center">
                     {files.map((f, i) => (
@@ -191,8 +222,14 @@ export default function ProductForm() {
               </div>
             )}
 
-            <Button type="submit" disabled={isPending} className="w-full h-10 bg-accent text-accent-foreground hover:opacity-90 font-semibold cursor-pointer">
-              {isPending ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear producto"}
+            <Button type="submit" disabled={isPending || (!isEdit && atMaxProducts)} className="w-full h-10 bg-accent text-accent-foreground hover:opacity-90 font-semibold cursor-pointer">
+              {isPending
+                ? "Guardando..."
+                : !isEdit && atMaxProducts
+                  ? "Límite de productos alcanzado"
+                  : isEdit
+                    ? "Guardar cambios"
+                    : "Crear producto"}
             </Button>
           </form>
         </CardContent>
