@@ -1,15 +1,14 @@
 import { useQueries } from "@tanstack/react-query";
 import { productService, type Product } from "@/services/productService";
 import { useStores } from "@/hooks/useStores";
-import type { Store } from "@/services/storeService";
 
 export type ProductWithStore = Product & {
   store_name: string;
   store_uuid: string;
 };
 
-export function useAllProducts() {
-  const { data: stores, isLoading: loadingStores } = useStores();
+export function useAllProducts(enabled = true) {
+  const { data: stores, isLoading: loadingStores } = useStores(enabled);
 
   const queries = useQueries({
     queries: (stores ?? []).map((store) => ({
