@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useStores } from "@/hooks/useStores";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Store } from "@/services/storeService";
 
 type StoreCtx = {
@@ -17,7 +18,8 @@ const Ctx = createContext<StoreCtx>({
 });
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { data: stores, isLoading } = useStores();
+  const { user } = useAuth();
+  const { data: stores, isLoading } = useStores(!!user);
   const [activeUuid, setActiveUuid] = useState<string | null>(() =>
     localStorage.getItem("katenda.active_store"),
   );

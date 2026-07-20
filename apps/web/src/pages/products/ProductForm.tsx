@@ -40,9 +40,8 @@ export default function ProductForm() {
 
   const existingCount = existingMedia?.length ?? 0;
   const maxImages = usePlanLimit("media_per_product");
-  const { data: currentProducts } = useProducts(storeUuid);
   const maxProducts = usePlanLimit("products");
-  const atMaxProducts = maxProducts !== undefined && maxProducts !== -1 && (currentProducts?.length ?? 0) >= maxProducts;
+  const atMaxProducts = maxProducts !== undefined && maxProducts !== -1 && (products?.length ?? 0) >= maxProducts;
 
   useEffect(() => {
     if (existing) {

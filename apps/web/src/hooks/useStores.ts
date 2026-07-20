@@ -5,13 +5,14 @@ import type { AxiosError } from "axios";
 
 const STORES_KEY = ["stores"];
 
-export function useStores() {
+export function useStores(enabled = true) {
   return useQuery({
     queryKey: STORES_KEY,
     queryFn: async () => {
       const res = await storeService.list();
       return res.data.stores;
     },
+    enabled,
   });
 }
 
