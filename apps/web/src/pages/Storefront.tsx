@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Store, Package, Phone, MapPin, ShoppingBag, MessageCircle } from "lucide-react";
+import { ArrowLeft, Store, Package, Phone, MessageCircle } from "lucide-react";
 import { Skeleton } from "@katenda_clients/ui";
 import { useStorefront } from "@/hooks/useStorefront";
 import { cn } from "@/lib/utils";

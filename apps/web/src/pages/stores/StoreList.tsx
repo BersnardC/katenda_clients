@@ -3,7 +3,7 @@ import { Store, Plus, Trash2, Edit, ExternalLink } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@katenda_clients/ui";
 import { useStores, useDeactivateStore } from "@/hooks/useStores";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+//import { cn } from "@/lib/utils";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -25,7 +25,7 @@ export default function StoreList() {
           className="bg-accent text-accent-foreground hover:opacity-90 cursor-pointer"
         >
           <Plus className="h-4 w-4 mr-1" />
-          Nueva tienda
+          {t("stores.add")}
         </Button>
       </PageHeader>
 

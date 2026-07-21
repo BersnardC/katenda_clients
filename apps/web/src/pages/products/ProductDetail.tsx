@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from "@katenda_clients/ui";
 import { useActiveStore } from "@/contexts/StoreContext";
@@ -15,7 +15,8 @@ export default function ProductDetail() {
   const { activeStore } = useActiveStore();
   const navigate = useNavigate();
   const fromList = !paramStoreUuid;
-  const storeUuid = paramStoreUuid || activeStore?.uuid || "";
+  const location = useLocation();
+  const storeUuid = paramStoreUuid || (location.state as { storeUuid?: string })?.storeUuid || activeStore?.uuid || "";
   const { data: store } = useStore(storeUuid);
   const { data: products } = useProducts(storeUuid);
   const { data: media, isLoading: loadingMedia } = useMedia("products", uuid || "");
@@ -52,7 +53,7 @@ export default function ProductDetail() {
       <PageHeader title={product.name}>
         <Button
           variant="outline"
-          onClick={() => navigate(fromList ? `/products/${uuid}/edit` : `/stores/${storeUuid}/products/${uuid}/edit`)}
+          onClick={() => navigate(fromList ? `/products/${uuid}/edit` : `/stores/${storeUuid}/products/${uuid}/edit`, fromList ? { state: { storeUuid } } : undefined)}
           className="cursor-pointer"
         >
           Editar

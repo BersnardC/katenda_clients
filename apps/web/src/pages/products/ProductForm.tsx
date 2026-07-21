@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { Button, Input, Label, Card, CardContent, Combobox, Skeleton } from "@katenda_clients/ui";
 import { useActiveStore } from "@/contexts/StoreContext";
@@ -19,7 +19,8 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const isEdit = !!uuid;
   const fromList = !paramStoreUuid;
-  const storeUuid = paramStoreUuid || activeStore?.uuid || "";
+  const location = useLocation();
+  const storeUuid = paramStoreUuid || (location.state as { storeUuid?: string })?.storeUuid || activeStore?.uuid || "";
   const { data: store } = useStore(storeUuid);
   const { data: products } = useProducts(storeUuid);
   const { data: categories } = useCategories();

@@ -20,6 +20,7 @@ export function useCreateProduct(storeUuid: string) {
     mutationFn: (data: ProductData) => productService.create(storeUuid, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
+      qc.invalidateQueries({ queryKey: ["all-products", storeUuid], refetchType: "all" });
       toast.success("Producto creado correctamente");
     },
     onError: (err: AxiosError<{ message: string }>) => {
@@ -37,6 +38,7 @@ export function useUpdateProduct(storeUuid: string) {
       productService.update(storeUuid, uuid, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
+      qc.invalidateQueries({ queryKey: ["all-products", storeUuid], refetchType: "all" });
       toast.success("Producto actualizado correctamente");
     },
     onError: (err: AxiosError<{ message: string }>) => {
@@ -54,6 +56,7 @@ export function useDeleteProduct() {
       productService.hardDelete(storeUuid, uuid),
     onSuccess: (_data, { storeUuid }) => {
       qc.invalidateQueries({ queryKey: ["products", storeUuid] });
+      qc.invalidateQueries({ queryKey: ["all-products", storeUuid] });
       toast.success("Producto eliminado permanentemente");
     },
     onError: (err: AxiosError<{ message: string }>) => {
@@ -70,6 +73,7 @@ export function useDeactivateProduct(storeUuid: string) {
     mutationFn: (uuid: string) => productService.destroy(storeUuid, uuid),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products", storeUuid], refetchType: "all" });
+      qc.invalidateQueries({ queryKey: ["all-products", storeUuid], refetchType: "all" });
       toast.success("Producto desactivado");
     },
     onError: (err: AxiosError<{ message: string }>) => {

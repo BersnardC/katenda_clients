@@ -92,6 +92,7 @@ const dict = {
     "error.required": "Campo requerido",
     "error.invalid_email": "Correo inválido",
     "error.min_password": "Mínimo 8 caracteres",
+    "stores.add": "Nueva tienda",
   },
   en: {
     "nav.search": "Search",
@@ -182,6 +183,7 @@ const dict = {
     "error.required": "Required field",
     "error.invalid_email": "Invalid email",
     "error.min_password": "Minimum 8 characters",
+    "stores.add": "New store",
   },
 } as const;
 

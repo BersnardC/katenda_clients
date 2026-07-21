@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { mediaService, type Media } from "@/services/mediaService";
+import { mediaService } from "@/services/mediaService";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
 

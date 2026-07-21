@@ -125,7 +125,7 @@ export default function Products() {
                   <tr
                     key={`${product.store_uuid}-${product.uuid}`}
                     className="border-t border-border hover:bg-background/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/products/${product.uuid}`)}
+                    onClick={() => navigate(`/products/${product.uuid}`, { state: { storeUuid: product.store_uuid } })}
                   >
                     <td className="p-3">
                       <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
@@ -143,7 +143,7 @@ export default function Products() {
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="font-medium truncate block max-w-[200px]">
+                      <span className="font-medium truncate block max-w-50">
                         {product.name}
                       </span>
                     </td>
@@ -172,7 +172,7 @@ export default function Products() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/products/${product.uuid}/edit`);
+                            navigate(`/products/${product.uuid}/edit`, { state: { storeUuid: product.store_uuid } });
                           }}
                           className="h-8 w-8 grid place-items-center rounded-lg hover:bg-muted text-muted-foreground"
                         >

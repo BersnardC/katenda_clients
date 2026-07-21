@@ -1,0 +1,164 @@
+
+D:\jobs\katenda\katenda_clients\apps\web\src\components\EmptyState.tsx
+  2:10  error  'cn' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\jobs\katenda\katenda_clients\apps\web\src\contexts\AuthContext.tsx
+    4:10  error  'useNavigate' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   71:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\contexts\AuthContext.tsx:71:5
+  69 |     const t = getStoredToken();
+  70 |     const u = getStoredUser();
+> 71 |     setToken(t);
+     |     ^^^^^^^^ Avoid calling setState() directly within an effect
+  72 |     setUser(u);
+  73 |   }, []);
+  74 |  react-hooks/set-state-in-effect
+  151:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-refresh/only-export-components
+
+D:\jobs\katenda\katenda_clients\apps\web\src\contexts\StoreContext.tsx
+  32:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\contexts\StoreContext.tsx:32:7
+  30 |     if (stores?.length && !activeUuid) {
+  31 |       localStorage.setItem("katenda.active_store", stores[0].uuid);
+> 32 |       setActiveUuid(stores[0].uuid);
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  33 |     }
+  34 |   }, [stores, activeUuid]);
+  35 |  react-hooks/set-state-in-effect
+  48:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-refresh/only-export-components
+
+D:\jobs\katenda\katenda_clients\apps\web\src\hooks\useMedia.ts
+  2:29  error  'Media' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\jobs\katenda\katenda_clients\apps\web\src\lib\i18n.tsx
+  202:45  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\lib\i18n.tsx:202:45
+  200 |   useEffect(() => {
+  201 |     const stored = localStorage.getItem("katenda.lang") as Lang | null;
+> 202 |     if (stored === "es" || stored === "en") setLangState(stored);
+      |                                             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  203 |   }, []);
+  204 |   const setLang = (l: Lang) => {
+  205 |     setLangState(l);  react-hooks/set-state-in-effect
+  212:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-refresh/only-export-components
+
+D:\jobs\katenda\katenda_clients\apps\web\src\lib\theme.tsx
+  16:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\lib\theme.tsx:16:5
+  14 |     const stored = localStorage.getItem("katenda.theme") as Theme | null;
+  15 |     const initial: Theme = stored === "light" || stored === "dark" ? stored : "dark";
+> 16 |     setThemeState(initial);
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  17 |     document.documentElement.classList.toggle("dark", initial === "dark");
+  18 |   }, []);
+  19 |   const setTheme = (t: Theme) => {  react-hooks/set-state-in-effect
+  31:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-refresh/only-export-components
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\CategoryForm.tsx
+  22:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\CategoryForm.tsx:22:7
+  20 |   useEffect(() => {
+  21 |     if (existing) {
+> 22 |       setForm({ name: existing.name, slug: existing.slug });
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  23 |     }
+  24 |   }, [existing]);
+  25 |  react-hooks/set-state-in-effect
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\Config.tsx
+  22:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\Config.tsx:22:7
+  20 |   useEffect(() => {
+  21 |     if (account) {
+> 22 |       setForm({
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  23 |         name: account.name || "",
+  24 |         legal_name: account.legal_name || "",
+  25 |         rif: account.rif || "",  react-hooks/set-state-in-effect
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\Dashboard.tsx
+  1:38  error  'ExternalLink' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\Storefront.tsx
+  2:44  error  'MapPin' is defined but never used       @typescript-eslint/no-unused-vars
+  2:52  error  'ShoppingBag' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\products\ProductForm.tsx
+  49:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\products\ProductForm.tsx:49:7
+  47 |   useEffect(() => {
+  48 |     if (existing) {
+> 49 |       setForm({
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  50 |         name: existing.name,
+  51 |         slug: existing.slug,
+  52 |         price: String(existing.price),  react-hooks/set-state-in-effect
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\stores\StoreForm.tsx
+  24:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\jobs\katenda\katenda_clients\apps\web\src\pages\stores\StoreForm.tsx:24:7
+  22 |   useEffect(() => {
+  23 |     if (store) {
+> 24 |       setForm({
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  25 |         name: store.name,
+  26 |         slug: store.slug,
+  27 |         description: store.description || "",  react-hooks/set-state-in-effect
+
+✖ 18 problems (18 errors, 0 warnings)

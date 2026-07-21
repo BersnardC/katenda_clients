@@ -12,7 +12,7 @@ export function useAllProducts(enabled = true) {
 
   const queries = useQueries({
     queries: (stores ?? []).map((store) => ({
-      queryKey: ["products", store.uuid],
+      queryKey: ["all-products", store.uuid],
       queryFn: async () => {
         const res = await productService.list(store.uuid);
         return res.data.products.map((p) => ({

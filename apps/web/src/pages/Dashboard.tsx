@@ -1,4 +1,4 @@
-import { Store, Package, CreditCard, ExternalLink } from "lucide-react";
+import { Store, Package, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from "@katenda_clients/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/lib/i18n";
