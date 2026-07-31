@@ -13,6 +13,7 @@ import { Toaster } from '@katenda_clients/ui'
 import { ThemeProvider } from '@/lib/theme'
 import { I18nProvider } from '@/lib/i18n'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { StoreProvider } from '@/contexts/StoreContext'
 
 import appCss from '../styles.css?url'
 
@@ -126,8 +127,10 @@ function RootComponent() {
       <ThemeProvider>
         <I18nProvider>
           <AuthProvider>
-            <Outlet />
-            <Toaster position="top-center" richColors />
+            <StoreProvider>
+              <Outlet />
+              <Toaster position="top-center" richColors />
+            </StoreProvider>
           </AuthProvider>
         </I18nProvider>
       </ThemeProvider>
