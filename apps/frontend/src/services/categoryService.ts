@@ -1,6 +1,6 @@
 import api from './api'
 import type { Paginated } from '@/types/pagination'
-import type { Category, CategoryData } from '@/types/models'
+import type { Category, CategoryData, Media } from '@/types/models'
 import type { ListParams } from './storeService'
 
 export type CategoryStatus = 'active' | 'inactive' | 'all'
@@ -23,4 +23,15 @@ export const categoryService = {
   deactivate: (uuid: string) => api.post(`/categories/${uuid}/deactivate`),
   activate: (uuid: string) => api.post(`/categories/${uuid}/activate`),
   destroy: (uuid: string) => api.delete(`/categories/${uuid}`),
+  uploadImage: (uuid: string, file: File) => {
+    const fd = new FormData()
+    fd.append('images[]', file)
+    return api.post<{ media: Media[]; category: Category }>(
+      `/categories/${uuid}/media`,
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+  },
+  removeImage: (uuid: string) =>
+    api.delete<{ category: Category }>(`/categories/${uuid}/media`),
 }

@@ -10,7 +10,7 @@ import {
   useInfiniteCategories,
   useUpdateCategory,
   useUploadCategoryImage,
-  useSetCategoryImage,
+  useRemoveCategoryImage,
 } from '@/hooks/useCategories'
 import { slugify, dataUrlToFile } from '@/lib/utils'
 
@@ -26,7 +26,7 @@ function EditCategory() {
   const { data } = useInfiniteCategories('all')
   const updateCategory = useUpdateCategory(id)
   const uploadImage = useUploadCategoryImage()
-  const setCategoryImage = useSetCategoryImage()
+  const removeImage = useRemoveCategoryImage()
   const categories = data?.pages.flatMap((p) => p.data) ?? []
 
   const [form, setForm] = useState<CategoryFormValue | null>(null)
@@ -36,7 +36,7 @@ function EditCategory() {
       setForm({
         name: category.name,
         image: category.image_url,
-        icon: category.icon || '🏷️',
+        icon: category.icon || 'Tag',
         active: category.status === 1,
         parentId: category.parent_id,
       })
@@ -74,23 +74,18 @@ function EditCategory() {
       await updateCategory.mutateAsync({
         name: form.name.trim(),
         slug: slugify(form.name),
-        icon: form.icon || '🏷️',
+        icon: form.icon || 'Tag',
         parent_id: form.parentId ?? undefined,
         status: form.active ? 1 : 0,
       })
       if (form.image && form.image.startsWith('data:')) {
         const file = await dataUrlToFile(form.image, 'categoria.jpg')
-        const mediaRes = await uploadImage.mutateAsync({
+        await uploadImage.mutateAsync({
           uuid: category.uuid,
           file,
         })
-        const imageUrl = mediaRes.data.media[0]?.url
-        if (imageUrl) {
-          await setCategoryImage.mutateAsync({
-            uuid: category.uuid,
-            image_url: imageUrl,
-          })
-        }
+      } else if (form.image === null && category.image_url) {
+        await removeImage.mutateAsync(category.uuid)
       }
       nav({ to: '/categories/$id', params: { id: category.uuid } })
     } catch {

@@ -31,7 +31,6 @@ import {
   useToggleCategoryStatus,
   useDeleteCategory,
   useUploadCategoryImage,
-  useSetCategoryImage,
 } from '@/hooks/useCategories'
 import type { FilterStatus } from '@/hooks/useHybridFilter'
 import { usePlanLimit } from '@/hooks/useAccount'
@@ -69,7 +68,6 @@ function CategoriesPage() {
   const toggleStatus = useToggleCategoryStatus()
   const deleteCategory = useDeleteCategory()
   const uploadImage = useUploadCategoryImage()
-  const setCategoryImage = useSetCategoryImage()
   const limit = usePlanLimit('categories')
 
   const categories = items
@@ -92,6 +90,10 @@ function CategoriesPage() {
       toast.error(t('categories.nameRequired'))
       return
     }
+    if (atMax) {
+      toast.error(t('categories.limitReached'))
+      return
+    }
     try {
       const res = await createCategory.mutateAsync({
         name: form.name.trim(),
@@ -103,10 +105,7 @@ function CategoriesPage() {
       const uuid = res.data.category.uuid
       if (form.image && form.image.startsWith('data:')) {
         const file = await dataUrlToFile(form.image, 'categoria.jpg')
-        const mediaRes = await uploadImage.mutateAsync({ uuid, file })
-        const imageUrl = mediaRes.data.media[0]?.url
-        if (imageUrl)
-          await setCategoryImage.mutateAsync({ uuid, image_url: imageUrl })
+        await uploadImage.mutateAsync({ uuid, file })
       }
       setOpenCreate(false)
       setForm(emptyForm)

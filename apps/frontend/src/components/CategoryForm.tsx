@@ -2,7 +2,7 @@ import { useRef, useState, useMemo } from 'react'
 import { X, Upload, ImageIcon, Check, ChevronDown, Search } from 'lucide-react'
 import { Switch } from '@katenda_clients/ui'
 import { useI18n } from '@/lib/i18n'
-import { CategoryGlyph } from '@/components/CategoryGlyph'
+import { IconPicker, DynamicIcon } from '@/components/IconPicker'
 import type { Category } from '@/types/models'
 
 export type CategoryFormValue = {
@@ -63,7 +63,7 @@ export function CategoryForm({
       <div>
         <p className="text-sm font-medium mb-1.5">{t('categories.image')}</p>
         {value.image ? (
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-muted border border-border">
+          <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-muted border border-border">
             <img
               src={value.image}
               alt="preview"
@@ -72,7 +72,7 @@ export function CategoryForm({
             <button
               type="button"
               onClick={() => set({ image: null })}
-              className="absolute top-2 right-2 size-9 grid place-items-center rounded-full bg-background/90 border border-border shadow-soft"
+              className="absolute top-2 right-2 size-8 grid place-items-center rounded-full bg-background/90 border border-border shadow-soft"
               aria-label={t('categories.removeImage')}
             >
               <X className="size-4" />
@@ -92,18 +92,18 @@ export function CategoryForm({
               setDrag(false)
               handleFile(e.dataTransfer.files[0])
             }}
-            className={`w-full aspect-[4/3] rounded-2xl border-2 border-dashed grid place-items-center text-center transition ${
+            className={`w-full h-32 rounded-2xl border-2 border-dashed grid place-items-center text-center transition ${
               drag ? 'border-primary bg-primary/5' : 'border-border bg-surface'
             }`}
           >
-            <div className="flex flex-col items-center gap-2 px-6">
-              <div className="size-12 rounded-2xl gradient-brand grid place-items-center text-primary-foreground">
-                <Upload className="size-5" />
+            <div className="flex flex-col items-center gap-1.5 px-6">
+              <div className="size-9 rounded-xl gradient-brand grid place-items-center text-primary-foreground">
+                <Upload className="size-4" />
               </div>
-              <p className="text-sm font-semibold">
+              <p className="text-xs font-semibold">
                 {t('categories.dropzone')}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 {t('categories.dropzoneSub')}
               </p>
             </div>
@@ -118,27 +118,17 @@ export function CategoryForm({
         />
       </div>
 
-      <div className="grid grid-cols-[1fr_88px] gap-3">
-        <div>
-          <p className="text-sm font-medium mb-1.5">{t('categories.name')}</p>
-          <input
-            value={value.name}
-            onChange={(e) => set({ name: e.target.value })}
-            placeholder="Ej. Moda"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <p className="text-sm font-medium mb-1.5">{t('categories.icon')}</p>
-          <input
-            value={value.icon}
-            onChange={(e) => set({ icon: e.target.value })}
-            placeholder="👕"
-            className={`${inputCls} text-center text-xl`}
-            maxLength={3}
-          />
-        </div>
+      <div>
+        <p className="text-sm font-medium mb-1.5">{t('categories.name')}</p>
+        <input
+          value={value.name}
+          onChange={(e) => set({ name: e.target.value })}
+          placeholder="Ej. Moda"
+          className={inputCls}
+        />
       </div>
+
+      <IconPicker value={value.icon} onChange={(icon) => set({ icon })} />
 
       <div>
         <p className="text-sm font-medium mb-1.5">{t('categories.parent')}</p>
@@ -195,10 +185,9 @@ export function CategoryForm({
                     className="w-full flex items-center justify-between px-4 h-11 text-sm hover:bg-muted"
                   >
                     <span className="flex items-center gap-2">
-                      <CategoryGlyph
-                        category={c}
-                        className="size-6 rounded-md"
-                        glyphClassName="text-xs"
+                      <DynamicIcon
+                        name={c.icon}
+                        className="size-4 text-muted-foreground"
                       />
                       {c.name}
                     </span>

@@ -6,7 +6,6 @@ import {
 } from '@tanstack/react-query'
 import { categoryService } from '@/services/categoryService'
 import type { CategoryStatus } from '@/services/categoryService'
-import { mediaService } from '@/services/mediaService'
 import { useI18n } from '@/lib/i18n'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
@@ -74,7 +73,9 @@ export function useCategory(uuid: string) {
   return useQuery({
     queryKey: ['category', uuid],
     queryFn: async () => {
-      const res = await categoryService.show(uuid)
+      const res = await categoryService.show(uuid, {
+        addons: 'products_count',
+      })
       return res.data.category
     },
     enabled: !!uuid,
@@ -154,10 +155,12 @@ export function useUploadCategoryImage() {
   const { t } = useI18n()
   return useMutation({
     mutationFn: ({ uuid, file }: { uuid: string; file: File }) =>
-      mediaService.create('categories', uuid, [file]),
-    onSuccess: (_data, vars) => {
+      categoryService.uploadImage(uuid, file),
+    onSuccess: (data, vars) => {
+      qc.setQueryData(['category', vars.uuid], data.data.category)
+      patchCategoryImage(qc, vars.uuid, data.data.category.image_url)
       qc.invalidateQueries({ queryKey: ['media', 'categories', vars.uuid] })
-      toast.success(t('media.added'))
+      qc.invalidateQueries({ queryKey: ['categories'] })
     },
     onError: (err: AxiosError<ApiMessage>) => {
       toast.error(err.response?.data.message || t('media.addError'))
@@ -165,14 +168,42 @@ export function useUploadCategoryImage() {
   })
 }
 
-export function useSetCategoryImage() {
+export function useRemoveCategoryImage() {
   const qc = useQueryClient()
+  const { t } = useI18n()
   return useMutation({
-    mutationFn: ({ uuid, image_url }: { uuid: string; image_url: string }) =>
-      categoryService.update(uuid, { image_url }),
-    onSuccess: (_data, vars) => {
+    mutationFn: (uuid: string) => categoryService.removeImage(uuid),
+    onSuccess: (data, vars) => {
+      qc.setQueryData(['category', vars], data.data.category)
+      patchCategoryImage(qc, vars, null)
       qc.invalidateQueries({ queryKey: ['categories'] })
-      qc.invalidateQueries({ queryKey: ['category', vars.uuid] })
     },
+    onError: (err: AxiosError<ApiMessage>) => {
+      toast.error(
+        err.response?.data.message || t('categories.imageRemoveError'),
+      )
+    },
+  })
+}
+
+function patchCategoryImage(
+  qc: ReturnType<typeof useQueryClient>,
+  uuid: string,
+  imageUrl: string | null,
+) {
+  qc.setQueriesData({ queryKey: ['categories'] }, (old: unknown) => {
+    if (!old || typeof old !== 'object' || !('pages' in old)) return old
+    const infinite = old as {
+      pages: { data: Category[]; [k: string]: unknown }[]
+    }
+    return {
+      ...infinite,
+      pages: infinite.pages.map((page) => ({
+        ...page,
+        data: page.data.map((c) =>
+          c.uuid === uuid ? { ...c, image_url: imageUrl } : c,
+        ),
+      })),
+    }
   })
 }

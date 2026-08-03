@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
-import { CategoryGlyph } from '@/components/CategoryGlyph'
+import { DynamicIcon } from '@/components/IconPicker'
 import {
   useCategory,
   useInfiniteCategories,
@@ -78,11 +78,17 @@ function CategoryDetail() {
       </header>
 
       <div className="px-5 space-y-4">
-        <CategoryGlyph
-          category={category}
-          className="w-full aspect-[4/3] rounded-2xl"
-          glyphClassName="text-7xl"
-        />
+        {category.image_url ? (
+          <img
+            src={category.image_url}
+            alt={category.name}
+            className="w-full aspect-[4/3] rounded-2xl object-cover bg-muted"
+          />
+        ) : (
+          <div className="w-full aspect-[4/3] rounded-2xl grid place-items-center bg-muted text-muted-foreground">
+            <DynamicIcon name={category.icon} className="size-20" />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <InfoTile
@@ -93,6 +99,10 @@ function CategoryDetail() {
                 : t('categories.inactiveLabel')
             }
             accent={category.status === 1 ? 'success' : 'muted'}
+          />
+          <InfoTile
+            label={t('categories.productsLabel')}
+            value={String(category.products_count ?? 0)}
           />
           <InfoTile
             label={t('categories.parentLabel')}
@@ -117,10 +127,9 @@ function CategoryDetail() {
                     params={{ id: sc.uuid }}
                     className="flex items-center gap-2 h-10 px-3 rounded-full bg-surface border border-border text-sm font-medium"
                   >
-                    <CategoryGlyph
-                      category={sc}
-                      className="size-5 rounded-md"
-                      glyphClassName="text-xs"
+                    <DynamicIcon
+                      name={sc.icon}
+                      className="size-4 text-muted-foreground"
                     />
                     {sc.name}
                   </Link>
