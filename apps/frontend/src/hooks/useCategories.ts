@@ -11,7 +11,8 @@ import { useI18n } from '@/lib/i18n'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
 import type { ApiMessage } from '@/types/auth'
-import type { CategoryData } from '@/types/models'
+import type { Category, CategoryData } from '@/types/models'
+import { useHybridFilter } from './useHybridFilter'
 
 export const CATEGORIES_PAGE_SIZE = 50
 
@@ -32,12 +33,39 @@ export function useInfiniteCategories(status: CategoryStatus = 'all') {
   })
 }
 
-export function useActiveCategoriesCount() {
+export function useCategoriesCount() {
   return useQuery({
-    queryKey: ['categories', 'count', 'active'],
+    queryKey: ['categories', 'count'],
     queryFn: async () => {
-      const res = await categoryService.index({ status: 'active', per_page: 1 })
+      const res = await categoryService.index({ status: 'all', per_page: 1 })
       return res.data.categories.total
+    },
+  })
+}
+
+export function useHybridCategories() {
+  return useHybridFilter<Category>({
+    queryKey: ['categories'],
+    queryFn: async ({ pageParam, status, search }) => {
+      const res = await categoryService.index({
+        page: pageParam,
+        per_page: CATEGORIES_PAGE_SIZE,
+        status,
+        search: search || undefined,
+        addons: 'products_count',
+      })
+      return res.data.categories
+    },
+    clientMatch: (c, filter) => {
+      const term = filter.search.trim().toLowerCase()
+      const matchText =
+        !term ||
+        c.name.toLowerCase().includes(term) ||
+        c.slug.toLowerCase().includes(term)
+      const matchStatus =
+        filter.status === 'all' ||
+        (filter.status === 'active' ? c.status === 1 : c.status === 0)
+      return matchText && matchStatus
     },
   })
 }

@@ -7,13 +7,15 @@ export type CategoryStatus = 'active' | 'inactive' | 'all'
 
 export interface CategoryListParams extends ListParams {
   status?: CategoryStatus
+  search?: string
+  addons?: string
 }
 
 export const categoryService = {
   index: (params?: CategoryListParams) =>
     api.get<{ categories: Paginated<Category> }>('/categories', { params }),
-  show: (uuid: string) =>
-    api.get<{ category: Category }>(`/categories/${uuid}`),
+  show: (uuid: string, params?: Pick<CategoryListParams, 'addons'>) =>
+    api.get<{ category: Category }>(`/categories/${uuid}`, { params }),
   create: (data: CategoryData) =>
     api.post<{ category: Category }>('/categories', data),
   update: (uuid: string, data: Partial<CategoryData>) =>

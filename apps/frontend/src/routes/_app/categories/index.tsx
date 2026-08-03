@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft, Plus, Trash2, Eye, Pencil, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   Switch,
@@ -22,17 +22,18 @@ import {
 import { useI18n } from '@/lib/i18n'
 import { CategoryForm } from '@/components/CategoryForm'
 import type { CategoryFormValue } from '@/components/CategoryForm'
-import { CategoryGlyph } from '@/components/CategoryGlyph'
+import { DynamicIcon } from '@/components/IconPicker'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import {
-  useInfiniteCategories,
-  useActiveCategoriesCount,
+  useHybridCategories,
+  useCategoriesCount,
   useCreateCategory,
   useToggleCategoryStatus,
   useDeleteCategory,
   useUploadCategoryImage,
   useSetCategoryImage,
 } from '@/hooks/useCategories'
+import type { FilterStatus } from '@/hooks/useHybridFilter'
 import { usePlanLimit } from '@/hooks/useAccount'
 import { slugify, dataUrlToFile } from '@/lib/utils'
 import type { Category } from '@/types/models'
@@ -44,16 +45,26 @@ export const Route = createFileRoute('/_app/categories/')({
 const emptyForm: CategoryFormValue = {
   name: '',
   image: null,
-  icon: '🏷️',
+  icon: 'Tag',
   active: true,
   parentId: null,
 }
 
 function CategoriesPage() {
   const { t } = useI18n()
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteCategories('all')
-  const { data: activeTotalData } = useActiveCategoriesCount()
+  const {
+    items,
+    total,
+    q,
+    setQ,
+    status,
+    setStatus,
+    hasMore,
+    fetchNextPage,
+    isFetchingNextPage,
+    isSkeleton,
+  } = useHybridCategories()
+  const { data: totalCountData } = useCategoriesCount()
   const createCategory = useCreateCategory()
   const toggleStatus = useToggleCategoryStatus()
   const deleteCategory = useDeleteCategory()
@@ -61,20 +72,19 @@ function CategoriesPage() {
   const setCategoryImage = useSetCategoryImage()
   const limit = usePlanLimit('categories')
 
-  const categories = data?.pages.flatMap((p) => p.data) ?? []
-  const activeTotal = activeTotalData ?? 0
-  const atMax = limit !== undefined && activeTotal >= limit
+  const categories = items
+  const totalCount = totalCountData ?? 0
+  const atMax = limit !== undefined && totalCount >= limit
 
-  const [q, setQ] = useState('')
   const [openCreate, setOpenCreate] = useState(false)
   const [form, setForm] = useState<CategoryFormValue>(emptyForm)
   const [toDelete, setToDelete] = useState<Category | null>(null)
 
-  const filtered = useMemo(
-    () =>
-      categories.filter((c) => c.name.toLowerCase().includes(q.toLowerCase())),
-    [categories, q],
-  )
+  const tabs: { value: FilterStatus; label: string }[] = [
+    { value: 'all', label: t('categories.filterAll') },
+    { value: 'active', label: t('categories.filterActive') },
+    { value: 'inactive', label: t('categories.filterInactive') },
+  ]
 
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,7 +96,7 @@ function CategoriesPage() {
       const res = await createCategory.mutateAsync({
         name: form.name.trim(),
         slug: slugify(form.name),
-        icon: form.icon || '🏷️',
+        icon: form.icon || 'Tag',
         parent_id: form.parentId ?? undefined,
         status: form.active ? 1 : 0,
       })
@@ -127,25 +137,15 @@ function CategoriesPage() {
         </Link>
         <h1 className="font-display font-bold text-2xl">
           {t('nav.categories')}
+          {limit !== undefined && (
+            <span className="pl-2 font-semibold text-[10px] text-muted-foreground">
+              {totalCount} / {limit}
+            </span>
+          )}
         </h1>
       </header>
 
-      {limit !== undefined && (
-        <div
-          className={`mx-5 mt-2 px-4 py-3 rounded-2xl border text-sm flex flex-wrap items-center gap-2 ${
-            atMax
-              ? 'bg-destructive/10 border-destructive/30 text-destructive'
-              : 'bg-surface border-border text-muted-foreground'
-          }`}
-        >
-          <span className="font-semibold">
-            {activeTotal} / {limit} {t('nav.categories').toLowerCase()}
-          </span>
-          {atMax && <span>{t('categories.limitReached')}</span>}
-        </div>
-      )}
-
-      <div className="px-5 mt-3">
+      <div className="px-5 mt-3 space-y-3">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
@@ -155,77 +155,110 @@ function CategoriesPage() {
             className="w-full h-12 pl-11 pr-4 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
           />
         </div>
+        <div className="flex items-center gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setStatus(tab.value)}
+              className={`px-4 h-9 rounded-full text-xs font-semibold transition ${
+                status === tab.value
+                  ? 'gradient-brand text-primary-foreground shadow-pop'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">
+            {isSkeleton ? '—' : `${categories.length}/${total ?? 0}`}
+          </span>
+        </div>
       </div>
 
       <InfiniteScroll
         onLoadMore={() => fetchNextPage()}
-        hasMore={hasNextPage}
+        hasMore={hasMore}
         isLoading={isFetchingNextPage}
       >
         <ul className="px-5 mt-4 space-y-3">
-          {filtered.length === 0 && (
+          {isSkeleton &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <CategorySkeleton key={i} />
+            ))}
+          {!isSkeleton && categories.length === 0 && (
             <li className="text-center text-sm text-muted-foreground py-12">
               {t('common.empty')}
             </li>
           )}
-          {filtered.map((c) => {
-            const parent = c.parent_id
-              ? categories.find((p) => p.id === c.parent_id)
-              : null
-            return (
-              <li
-                key={c.uuid}
-                className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
-              >
-                <CategoryGlyph
-                  category={c}
-                  className="size-20 rounded-xl"
-                  glyphClassName="text-3xl"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{c.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {parent
-                          ? `↳ ${parent.name}`
-                          : t('categories.rootLabel')}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={c.status === 1}
-                      onCheckedChange={(v) =>
-                        toggleStatus.mutate({ uuid: c.uuid, activate: v })
-                      }
-                      aria-label={t('categories.active')}
+          {!isSkeleton &&
+            categories.map((c) => {
+              const parent = c.parent_id
+                ? categories.find((p) => p.id === c.parent_id)
+                : null
+              return (
+                <li
+                  key={c.uuid}
+                  className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
+                >
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.name}
+                      className="size-20 rounded-xl object-cover bg-muted"
                     />
+                  ) : (
+                    <div className="size-20 rounded-xl grid place-items-center bg-muted text-muted-foreground">
+                      <DynamicIcon name={c.icon} className="size-8" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {c.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {parent
+                            ? `↳ ${parent.name}`
+                            : t('categories.rootLabel')}
+                          {c.products_count !== undefined &&
+                            ` · ${c.products_count} ${t('categories.products')}`}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={c.status === 1}
+                        onCheckedChange={(v) =>
+                          toggleStatus.mutate({ uuid: c.uuid, activate: v })
+                        }
+                        aria-label={t('categories.active')}
+                      />
+                    </div>
+                    <div className="mt-2 flex gap-1.5">
+                      <Link
+                        to="/categories/$id"
+                        params={{ id: c.uuid }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground text-xs font-semibold"
+                      >
+                        <Eye className="size-3" /> {t('common.view')}
+                      </Link>
+                      <Link
+                        to="/categories/$id/edit"
+                        params={{ id: c.uuid }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
+                      >
+                        <Pencil className="size-3" /> {t('common.edit')}
+                      </Link>
+                      <button
+                        onClick={() => setToDelete(c)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold ml-auto"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-2 flex gap-1.5">
-                    <Link
-                      to="/categories/$id"
-                      params={{ id: c.uuid }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground text-xs font-semibold"
-                    >
-                      <Eye className="size-3" /> {t('common.view')}
-                    </Link>
-                    <Link
-                      to="/categories/$id/edit"
-                      params={{ id: c.uuid }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
-                    >
-                      <Pencil className="size-3" /> {t('common.edit')}
-                    </Link>
-                    <button
-                      onClick={() => setToDelete(c)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold ml-auto"
-                    >
-                      <Trash2 className="size-3" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            )
-          })}
+                </li>
+              )
+            })}
         </ul>
       </InfiniteScroll>
 
@@ -295,5 +328,27 @@ function CategoriesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+function CategorySkeleton() {
+  return (
+    <li className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft">
+      <div className="size-20 rounded-xl bg-muted animate-pulse" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex items-start gap-2">
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+            <div className="h-2.5 w-3/4 rounded bg-muted animate-pulse" />
+          </div>
+          <div className="h-6 w-11 rounded-full bg-muted animate-pulse" />
+        </div>
+        <div className="mt-2 flex gap-1.5">
+          <div className="h-6 w-14 rounded-lg bg-muted animate-pulse" />
+          <div className="h-6 w-16 rounded-lg bg-muted animate-pulse" />
+          <div className="h-6 w-8 rounded-lg bg-muted animate-pulse ml-auto" />
+        </div>
+      </div>
+    </li>
   )
 }

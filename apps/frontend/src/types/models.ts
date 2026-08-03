@@ -83,6 +83,8 @@ export interface Category {
   icon: string | null
   image_url: string | null
   status: number
+  products_count?: number
+  subcategories_count?: number
   created_at: string
   updated_at: string
 }
