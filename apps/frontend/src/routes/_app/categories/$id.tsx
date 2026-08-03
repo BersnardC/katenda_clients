@@ -1,12 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { PlaceholderPage } from '@/components/PlaceholderPage'
-import { useI18n } from '@/lib/i18n'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/categories/$id')({
-  component: CategoryDetailPage,
+  component: () => <Outlet />,
 })
-
-function CategoryDetailPage() {
-  const { t } = useI18n()
-  return <PlaceholderPage title={t('nav.categories')} />
-}

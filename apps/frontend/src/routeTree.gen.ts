@@ -27,7 +27,6 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as StoreSlugRouteImport } from './routes/store/$slug'
 import { Route as AppCategoriesIndexRouteImport } from './routes/_app/categories/index'
 import { Route as AppCategoriesIdRouteImport } from './routes/_app/categories/$id'
-import { Route as AppCategoriesNewRouteImport } from './routes/_app/categories/new'
 import { Route as AppProductsIndexRouteImport } from './routes/_app/products/index'
 import { Route as AppProductsIdRouteImport } from './routes/_app/products/$id'
 import { Route as AppProductsNewRouteImport } from './routes/_app/products/new'
@@ -40,6 +39,8 @@ import { Route as AppStoresNewRouteImport } from './routes/_app/stores/new'
 import { Route as AppUsersIndexRouteImport } from './routes/_app/users/index'
 import { Route as AppUsersIdRouteImport } from './routes/_app/users/$id'
 import { Route as AppUsersCreateRouteImport } from './routes/_app/users/create'
+import { Route as AppCategoriesIdIndexRouteImport } from './routes/_app/categories/$id/index'
+import { Route as AppCategoriesIdEditRouteImport } from './routes/_app/categories/$id/edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,11 +131,6 @@ const AppCategoriesIdRoute = AppCategoriesIdRouteImport.update({
   path: '/categories/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppCategoriesNewRoute = AppCategoriesNewRouteImport.update({
-  id: '/categories/new',
-  path: '/categories/new',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -195,6 +191,16 @@ const AppUsersCreateRoute = AppUsersCreateRouteImport.update({
   path: '/users/create',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCategoriesIdIndexRoute = AppCategoriesIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCategoriesIdRoute,
+} as any)
+const AppCategoriesIdEditRoute = AppCategoriesIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => AppCategoriesIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -212,8 +218,7 @@ export interface FileRoutesByFullPath {
   '/auth/recoverypass': typeof AuthRecoverypassRoute
   '/auth/register': typeof AuthRegisterRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/categories/$id': typeof AppCategoriesIdRoute
-  '/categories/new': typeof AppCategoriesNewRoute
+  '/categories/$id': typeof AppCategoriesIdRouteWithChildren
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
   '/roles/$id': typeof AppRolesIdRoute
@@ -227,6 +232,8 @@ export interface FileRoutesByFullPath {
   '/roles/': typeof AppRolesIndexRoute
   '/stores/': typeof AppStoresIndexRoute
   '/users/': typeof AppUsersIndexRoute
+  '/categories/$id/edit': typeof AppCategoriesIdEditRoute
+  '/categories/$id/': typeof AppCategoriesIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -244,8 +251,6 @@ export interface FileRoutesByTo {
   '/auth/recoverypass': typeof AuthRecoverypassRoute
   '/auth/register': typeof AuthRegisterRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/categories/$id': typeof AppCategoriesIdRoute
-  '/categories/new': typeof AppCategoriesNewRoute
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
   '/roles/$id': typeof AppRolesIdRoute
@@ -259,6 +264,8 @@ export interface FileRoutesByTo {
   '/roles': typeof AppRolesIndexRoute
   '/stores': typeof AppStoresIndexRoute
   '/users': typeof AppUsersIndexRoute
+  '/categories/$id/edit': typeof AppCategoriesIdEditRoute
+  '/categories/$id': typeof AppCategoriesIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -278,8 +285,7 @@ export interface FileRoutesById {
   '/auth/recoverypass': typeof AuthRecoverypassRoute
   '/auth/register': typeof AuthRegisterRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/_app/categories/$id': typeof AppCategoriesIdRoute
-  '/_app/categories/new': typeof AppCategoriesNewRoute
+  '/_app/categories/$id': typeof AppCategoriesIdRouteWithChildren
   '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/products/new': typeof AppProductsNewRoute
   '/_app/roles/$id': typeof AppRolesIdRoute
@@ -293,6 +299,8 @@ export interface FileRoutesById {
   '/_app/roles/': typeof AppRolesIndexRoute
   '/_app/stores/': typeof AppStoresIndexRoute
   '/_app/users/': typeof AppUsersIndexRoute
+  '/_app/categories/$id/edit': typeof AppCategoriesIdEditRoute
+  '/_app/categories/$id/': typeof AppCategoriesIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -313,7 +321,6 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/store/$slug'
     | '/categories/$id'
-    | '/categories/new'
     | '/products/$id'
     | '/products/new'
     | '/roles/$id'
@@ -327,6 +334,8 @@ export interface FileRouteTypes {
     | '/roles/'
     | '/stores/'
     | '/users/'
+    | '/categories/$id/edit'
+    | '/categories/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -344,8 +353,6 @@ export interface FileRouteTypes {
     | '/auth/recoverypass'
     | '/auth/register'
     | '/store/$slug'
-    | '/categories/$id'
-    | '/categories/new'
     | '/products/$id'
     | '/products/new'
     | '/roles/$id'
@@ -359,6 +366,8 @@ export interface FileRouteTypes {
     | '/roles'
     | '/stores'
     | '/users'
+    | '/categories/$id/edit'
+    | '/categories/$id'
   id:
     | '__root__'
     | '/'
@@ -378,7 +387,6 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/store/$slug'
     | '/_app/categories/$id'
-    | '/_app/categories/new'
     | '/_app/products/$id'
     | '/_app/products/new'
     | '/_app/roles/$id'
@@ -392,6 +400,8 @@ export interface FileRouteTypes {
     | '/_app/roles/'
     | '/_app/stores/'
     | '/_app/users/'
+    | '/_app/categories/$id/edit'
+    | '/_app/categories/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -531,13 +541,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCategoriesIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/categories/new': {
-      id: '/_app/categories/new'
-      path: '/categories/new'
-      fullPath: '/categories/new'
-      preLoaderRoute: typeof AppCategoriesNewRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_app/products/': {
       id: '/_app/products/'
       path: '/products'
@@ -622,8 +625,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersCreateRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/categories/$id/': {
+      id: '/_app/categories/$id/'
+      path: '/'
+      fullPath: '/categories/$id/'
+      preLoaderRoute: typeof AppCategoriesIdIndexRouteImport
+      parentRoute: typeof AppCategoriesIdRoute
+    }
+    '/_app/categories/$id/edit': {
+      id: '/_app/categories/$id/edit'
+      path: '/edit'
+      fullPath: '/categories/$id/edit'
+      preLoaderRoute: typeof AppCategoriesIdEditRouteImport
+      parentRoute: typeof AppCategoriesIdRoute
+    }
   }
 }
+
+interface AppCategoriesIdRouteChildren {
+  AppCategoriesIdEditRoute: typeof AppCategoriesIdEditRoute
+  AppCategoriesIdIndexRoute: typeof AppCategoriesIdIndexRoute
+}
+
+const AppCategoriesIdRouteChildren: AppCategoriesIdRouteChildren = {
+  AppCategoriesIdEditRoute: AppCategoriesIdEditRoute,
+  AppCategoriesIdIndexRoute: AppCategoriesIdIndexRoute,
+}
+
+const AppCategoriesIdRouteWithChildren = AppCategoriesIdRoute._addFileChildren(
+  AppCategoriesIdRouteChildren,
+)
 
 interface AppRouteRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
@@ -636,8 +667,7 @@ interface AppRouteRouteChildren {
   AppPublishRoute: typeof AppPublishRoute
   AppShopsRoute: typeof AppShopsRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
-  AppCategoriesIdRoute: typeof AppCategoriesIdRoute
-  AppCategoriesNewRoute: typeof AppCategoriesNewRoute
+  AppCategoriesIdRoute: typeof AppCategoriesIdRouteWithChildren
   AppProductsIdRoute: typeof AppProductsIdRoute
   AppProductsNewRoute: typeof AppProductsNewRoute
   AppRolesIdRoute: typeof AppRolesIdRoute
@@ -664,8 +694,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppPublishRoute: AppPublishRoute,
   AppShopsRoute: AppShopsRoute,
   AppWhatsappRoute: AppWhatsappRoute,
-  AppCategoriesIdRoute: AppCategoriesIdRoute,
-  AppCategoriesNewRoute: AppCategoriesNewRoute,
+  AppCategoriesIdRoute: AppCategoriesIdRouteWithChildren,
   AppProductsIdRoute: AppProductsIdRoute,
   AppProductsNewRoute: AppProductsNewRoute,
   AppRolesIdRoute: AppRolesIdRoute,

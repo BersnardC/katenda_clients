@@ -3,8 +3,14 @@ import type { Paginated } from '@/types/pagination'
 import type { Category, CategoryData } from '@/types/models'
 import type { ListParams } from './storeService'
 
+export type CategoryStatus = 'active' | 'inactive' | 'all'
+
+export interface CategoryListParams extends ListParams {
+  status?: CategoryStatus
+}
+
 export const categoryService = {
-  index: (params?: ListParams) =>
+  index: (params?: CategoryListParams) =>
     api.get<{ categories: Paginated<Category> }>('/categories', { params }),
   show: (uuid: string) =>
     api.get<{ category: Category }>(`/categories/${uuid}`),

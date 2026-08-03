@@ -23,6 +23,15 @@ export function useSubscription() {
   })
 }
 
+export function usePlanLimit(feature: string): number | undefined {
+  const { data: subscription } = useSubscription()
+  const limit = subscription?.plan?.limits?.find(
+    (l) => l.feature === feature,
+  )?.limit_value
+  if (limit === undefined || limit === -1) return undefined
+  return limit
+}
+
 export function usePlans() {
   return useQuery({
     queryKey: ['plans'],

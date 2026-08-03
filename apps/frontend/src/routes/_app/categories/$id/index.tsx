@@ -1,0 +1,165 @@
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
+import { CategoryGlyph } from '@/components/CategoryGlyph'
+import {
+  useCategory,
+  useInfiniteCategories,
+  useDeleteCategory,
+} from '@/hooks/useCategories'
+
+export const Route = createFileRoute('/_app/categories/$id/')({
+  component: CategoryDetail,
+})
+
+function CategoryDetail() {
+  const { t } = useI18n()
+  const nav = useNavigate()
+  const { id } = Route.useParams()
+  const { data: category, isError, isLoading } = useCategory(id)
+  const { data } = useInfiniteCategories('all')
+  const deleteCategory = useDeleteCategory()
+  const categories = data?.pages.flatMap((p) => p.data) ?? []
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        {t('common.loading')}
+      </div>
+    )
+  }
+
+  if (isError || !category) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">{t('categories.notFound')}</p>
+        <Link to="/categories" className="text-primary font-medium">
+          {t('common.back')}
+        </Link>
+      </div>
+    )
+  }
+
+  const parent = category.parent_id
+    ? categories.find((c) => c.id === category.parent_id)
+    : null
+  const children = categories.filter((c) => c.parent_id === category.id)
+
+  const remove = async () => {
+    try {
+      await deleteCategory.mutateAsync(category.uuid)
+      nav({ to: '/categories' })
+    } catch {
+      // error handled by mutation toast
+    }
+  }
+
+  return (
+    <>
+      <header className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <Link
+          to="/categories"
+          className="size-10 grid place-items-center rounded-full bg-surface border border-border"
+          aria-label={t('common.back')}
+        >
+          <ArrowLeft className="size-5" />
+        </Link>
+        <h1 className="font-display font-bold text-2xl flex-1 truncate">
+          {category.name}
+        </h1>
+        <Link
+          to="/categories/$id/edit"
+          params={{ id: category.uuid }}
+          className="size-10 grid place-items-center rounded-full bg-primary/15 text-primary"
+          aria-label={t('common.edit')}
+        >
+          <Pencil className="size-4" />
+        </Link>
+      </header>
+
+      <div className="px-5 space-y-4">
+        <CategoryGlyph
+          category={category}
+          className="w-full aspect-[4/3] rounded-2xl"
+          glyphClassName="text-7xl"
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <InfoTile
+            label={t('categories.status')}
+            value={
+              category.status === 1
+                ? t('categories.activeLabel')
+                : t('categories.inactiveLabel')
+            }
+            accent={category.status === 1 ? 'success' : 'muted'}
+          />
+          <InfoTile
+            label={t('categories.parentLabel')}
+            value={parent ? parent.name : t('categories.rootLabel')}
+          />
+          <InfoTile
+            label={t('categories.subcategories')}
+            value={String(children.length)}
+          />
+        </div>
+
+        {children.length > 0 && (
+          <section>
+            <h2 className="font-display font-bold text-lg mb-2">
+              {t('categories.subcategories')}
+            </h2>
+            <ul className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+              {children.map((sc) => (
+                <li key={sc.uuid} className="shrink-0">
+                  <Link
+                    to="/categories/$id"
+                    params={{ id: sc.uuid }}
+                    className="flex items-center gap-2 h-10 px-3 rounded-full bg-surface border border-border text-sm font-medium"
+                  >
+                    <CategoryGlyph
+                      category={sc}
+                      className="size-5 rounded-md"
+                      glyphClassName="text-xs"
+                    />
+                    {sc.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <button
+          onClick={remove}
+          className="w-full py-4 rounded-2xl bg-destructive/15 text-destructive font-semibold flex items-center justify-center gap-2"
+        >
+          <Trash2 className="size-4" /> {t('categories.deleteTitle')}
+        </button>
+      </div>
+    </>
+  )
+}
+
+function InfoTile({
+  label,
+  value,
+  accent,
+}: {
+  label: string
+  value: string
+  accent?: 'success' | 'muted'
+}) {
+  const cls =
+    accent === 'success'
+      ? 'bg-success/15 text-success-foreground'
+      : accent === 'muted'
+        ? 'bg-muted text-muted-foreground'
+        : 'bg-card'
+  return (
+    <div className={`rounded-2xl border border-border p-3 ${cls}`}>
+      <p className="text-[11px] uppercase tracking-wide opacity-70">{label}</p>
+      <p className="text-sm font-semibold mt-0.5">{value}</p>
+    </div>
+  )
+}
