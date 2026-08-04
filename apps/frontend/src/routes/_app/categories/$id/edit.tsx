@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useI18n } from '@/lib/i18n'
 import { CategoryForm } from '@/components/CategoryForm'
 import type { CategoryFormValue } from '@/components/CategoryForm'
+import { SkeletonForm } from '@/components/skeletons'
 import {
   useCategory,
   useInfiniteCategories,
@@ -44,11 +45,7 @@ function EditCategory() {
   }, [category, form])
 
   if (isLoading) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        {t('common.loading')}
-      </div>
-    )
+    return <SkeletonForm />
   }
 
   if (isError || !category) {

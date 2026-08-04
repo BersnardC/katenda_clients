@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { DynamicIcon } from '@/components/IconPicker'
+import { SkeletonView } from '@/components/skeletons'
 import {
   useCategory,
   useInfiniteCategories,
@@ -22,11 +23,7 @@ function CategoryDetail() {
   const categories = data?.pages.flatMap((p) => p.data) ?? []
 
   if (isLoading) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        {t('common.loading')}
-      </div>
-    )
+    return <SkeletonView tiles={4} />
   }
 
   if (isError || !category) {
