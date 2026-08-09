@@ -98,6 +98,57 @@ export interface CategoryData {
   status?: 0 | 1
 }
 
+export interface Permission {
+  id: number
+  name: string
+  key: string
+  scope: string
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface Role {
+  id: number
+  uuid: string
+  account_id: number
+  name: string
+  scope: string
+  status: 0 | 1
+  permissions: Permission[]
+  users_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface RoleData {
+  name: string
+  permission_ids?: number[]
+}
+
+export interface AccountUserPivot {
+  account_id: number
+  user_id: number
+  role_id: number
+  status: 0 | 1
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface AccountUser {
+  id: number
+  uuid: string
+  name: string
+  email: string
+  email_verified_at: string | null
+  status: number
+  active_account_id: number | null
+  is_superadmin: boolean
+  pivot: AccountUserPivot
+  roles: Role[]
+  created_at: string
+  updated_at: string
+}
+
 export interface Account {
   id: number
   uuid: string
