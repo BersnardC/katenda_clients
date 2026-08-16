@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function Register() {
+export function Register() {
   const { register, user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -42,3 +42,6 @@ export default function Register() {
     </div>
   );
 }
+
+
+export { Register as Component };

@@ -4,7 +4,7 @@ import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
-export default function Login() {
+export function Component() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");

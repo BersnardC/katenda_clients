@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 type Post = { id: number; title: string; body: string; author?: any };
 
-export default function Posts() {
+export function Component() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,3 +41,6 @@ export default function Posts() {
     </div>
   );
 }
+
+
+export default Component;

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { postService } from "../services/postService";
 import { toast } from "sonner";
 
-export default function Publish() {
+export function Component() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
