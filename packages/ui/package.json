@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./*": "./src/components/ui/*.tsx"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
