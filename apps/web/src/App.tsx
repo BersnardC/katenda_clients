@@ -42,7 +42,18 @@ const router = createBrowserRouter([
           { path: "publish", lazy: () => import("./pages/app/publish") },
           { path: "shops", lazy: () => import("./pages/app/shops") },
           { path: "profile", lazy: () => import("./pages/app/profile") },
-          { path: "categories", lazy: () => import("./pages/app/categories") },
+          {
+            path: "categories",
+            lazy: () => import("./pages/app/categories/index"),
+          },
+          {
+            path: "categories/:uuid",
+            lazy: () => import("./pages/app/categories/detail"),
+          },
+          {
+            path: "categories/:uuid/edit",
+            lazy: () => import("./pages/app/categories/edit"),
+          },
           { path: "products", lazy: () => import("./pages/app/products") },
           { path: "users", lazy: () => import("./pages/app/users") },
           { path: "roles", lazy: () => import("./pages/app/roles") },
