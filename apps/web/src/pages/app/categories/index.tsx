@@ -34,6 +34,7 @@ const errMsg = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
 
 export function Component() {
+  /* Declarations */
   const { t } = useI18n();
   const [cats, setCats] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,13 +43,6 @@ export function Component() {
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState<CategoryFormValue>(emptyForm);
   const [toDelete, setToDelete] = useState<Category | null>(null);
-
-  const load = () => {
-    categoryService
-      .index({ per_page: 100, addons: "products_count" })
-      .then((res) => setCats(res.data))
-      .finally(() => setLoading(false));
-  };
 
   useEffect(() => {
     load();
@@ -68,6 +62,14 @@ export function Component() {
     { value: "active", label: t("categories.filterActive") },
     { value: "inactive", label: t("categories.filterInactive") },
   ];
+
+  /* Functions */
+  const load = () => {
+    categoryService
+      .index({ per_page: 100, addons: "products_count" })
+      .then((res) => setCats(res.data))
+      .finally(() => setLoading(false));
+  };
 
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
