@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Eye, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -22,12 +22,16 @@ import {
   AlertDialogAction,
 } from "@katenda_clients/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n";
-import {
-  CategoryForm,
-  type CategoryFormValue,
-} from "@/components/categories/CategoryForm";
+import { CategoryForm, type CategoryFormValue } from "@/components/categories/CategoryForm";
 import { DynamicIcon } from "@/components/IconPicker";
+import { InfiniteScroll } from "@/components/InfiniteScroll";
+import {
+  useHybridCategories,
+  useCategoriesCount,
+  matchesCategoryFilter,
+} from "@/hooks/useCategories-old";
 import { categoryService } from "@/services/categoryService";
+import { usePlanLimit } from "@/hooks/useAccount";
 import { slugify, dataUrlToFile } from "@/lib/utils";
 import type { Category } from "@/types/models";
 
@@ -39,49 +43,51 @@ const emptyForm: CategoryFormValue = {
   parentId: null,
 };
 
-const errMsg = (e: unknown, fallback: string) =>
-  e instanceof Error && e.message ? e.message : fallback;
-
 export function Component() {
   const { t } = useI18n();
-  const [cats, setCats] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const {
+    items: categories,
+    total,
+    q,
+    setQ,
+    status,
+    setStatus,
+    mode,
+    hasMore,
+    loadMore,
+    loading: isSkeleton,
+    loadingMore,
+    refetch,
+    prependCategory,
+    patchCategory,
+    removeCategory,
+  } = useHybridCategories();
+  const { data: countData, refetch: refetchCount } = useCategoriesCount();
+  const limit = usePlanLimit("categories");
+  const totalCount = countData?.meta.total ?? 0;
+  const atMax = limit !== undefined && totalCount >= limit;
+
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState<CategoryFormValue>(emptyForm);
   const [toDelete, setToDelete] = useState<Category | null>(null);
 
-  const load = () => {
-    categoryService
-      .index({ per_page: 100, addons: "products_count" })
-      .then((res) => setCats(res.data))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const term = q.trim().toLowerCase();
-  const visible = cats.filter((c) => {
-    const matchText = !term || c.name.toLowerCase().includes(term);
-    const matchStatus =
-      status === "all" ||
-      (status === "active" ? c.status === 1 : c.status === 0);
-    return matchText && matchStatus;
-  });
-
-  const tabs: { value: typeof status; label: string }[] = [
+  const tabs: { value: "all" | "active" | "inactive"; label: string }[] = [
     { value: "all", label: t("categories.filterAll") },
     { value: "active", label: t("categories.filterActive") },
     { value: "inactive", label: t("categories.filterInactive") },
   ];
 
+  const errMsg = (e: unknown, fallback: string) =>
+    e instanceof Error && e.message ? e.message : fallback;
+
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
       toast.error(t("categories.nameRequired"));
+      return;
+    }
+    if (atMax) {
+      toast.error(t("categories.limitReached"));
       return;
     }
     try {
@@ -92,40 +98,54 @@ export function Component() {
         parent_id: form.parentId ?? undefined,
         status: form.active ? 1 : 0,
       });
+      const created = res.data;
+      if (matchesCategoryFilter(created, status, q)) {
+        prependCategory(created);
+      } else {
+        refetch();
+      }
       if (form.image && form.image.startsWith("data:")) {
         const file = await dataUrlToFile(form.image, "categoria.jpg");
-        await categoryService.uploadImage(res.data.uuid, file);
+        const up = await categoryService.uploadImage(created.uuid, file);
+        patchCategory(created.uuid, { image_url: up.category.image_url });
       }
       toast.success(t("categories.created"));
       setOpenCreate(false);
       setForm(emptyForm);
-      load();
+      refetchCount();
     } catch (err) {
       toast.error(errMsg(err, t("categories.createError")));
     }
   };
 
   const toggle = async (c: Category, activate: boolean) => {
+    const nextStatus = activate ? 1 : 0;
+    if (mode === "client") patchCategory(c.uuid, { status: nextStatus });
     try {
       if (activate) await categoryService.activate(c.uuid);
       else await categoryService.deactivate(c.uuid);
       toast.success(
         activate ? t("categories.activated") : t("categories.deactivated"),
       );
-      load();
+      if (mode === "server") refetch();
     } catch (err) {
+      if (mode === "client") patchCategory(c.uuid, { status: c.status });
       toast.error(errMsg(err, t("categories.statusError")));
     }
   };
 
   const remove = async () => {
     if (!toDelete) return;
+    const target = toDelete;
+    if (mode === "client") removeCategory(target.uuid);
     try {
-      await categoryService.destroy(toDelete.uuid);
+      await categoryService.destroy(target.uuid);
       toast.success(t("categories.deleted"));
       setToDelete(null);
-      load();
+      refetchCount();
+      if (mode === "server") refetch();
     } catch (err) {
+      if (mode === "client") refetch();
       toast.error(errMsg(err, t("categories.deleteError")));
     }
   };
@@ -140,7 +160,14 @@ export function Component() {
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <h1 className="font-display font-bold text-2xl">{t("nav.categories")}</h1>
+        <h1 className="font-display font-bold text-2xl">
+          {t("nav.categories")}
+          {limit !== undefined && (
+            <span className="pl-2 font-semibold text-[10px] text-muted-foreground">
+              {totalCount} / {limit}
+            </span>
+          )}
+        </h1>
       </header>
 
       <div className="px-5 mt-3 space-y-3">
@@ -167,90 +194,102 @@ export function Component() {
               {tab.label}
             </button>
           ))}
+          <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">
+            {isSkeleton ? "—" : `${categories.length}/${total ?? 0}`}
+          </span>
         </div>
       </div>
 
-      <ul className="px-5 mt-4 space-y-3">
-        {loading &&
-          Array.from({ length: 5 }).map((_, i) => (
-            <CategorySkeleton key={i} />
-          ))}
-        {!loading && visible.length === 0 && (
-          <li className="text-center text-sm text-muted-foreground py-12">
-            {t("common.empty")}
-          </li>
-        )}
-        {!loading &&
-          visible.map((c) => {
-            const parent = c.parent_id
-              ? cats.find((p) => p.id === c.parent_id)
-              : null;
-            return (
-              <li
-                key={c.uuid}
-                className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
-              >
-                {c.image_url ? (
-                  <img
-                    src={c.image_url}
-                    alt={c.name}
-                    className="size-20 rounded-xl object-cover bg-muted"
-                  />
-                ) : (
-                  <div className="size-20 rounded-xl grid place-items-center bg-muted text-muted-foreground">
-                    <DynamicIcon name={c.icon} className="size-8" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{c.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {parent
-                          ? `↳ ${parent.name}`
-                          : t("categories.rootLabel")}
-                        {c.products_count !== undefined &&
-                          ` · ${c.products_count} ${t("categories.products")}`}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={c.status === 1}
-                      onCheckedChange={(v) => toggle(c, v)}
-                      aria-label={t("categories.active")}
+      <InfiniteScroll
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        isLoading={loadingMore}
+      >
+        <ul className="px-5 mt-4 space-y-3">
+          {isSkeleton &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <CategorySkeleton key={i} />
+            ))}
+          {!isSkeleton && categories.length === 0 && (
+            <li className="text-center text-sm text-muted-foreground py-12">
+              {t("common.empty")}
+            </li>
+          )}
+          {!isSkeleton &&
+            categories.map((c) => {
+              const parent = c.parent_id
+                ? categories.find((p) => p.id === c.parent_id)
+                : null;
+              return (
+                <li
+                  key={c.uuid}
+                  className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
+                >
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.name}
+                      className="size-20 rounded-xl object-cover bg-muted"
                     />
+                  ) : (
+                    <div className="size-20 rounded-xl grid place-items-center bg-muted text-muted-foreground">
+                      <DynamicIcon name={c.icon} className="size-8" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {c.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {parent
+                            ? `↳ ${parent.name}`
+                            : t("categories.rootLabel")}
+                          {c.products_count !== undefined &&
+                            ` · ${c.products_count} ${t("categories.products")}`}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={c.status === 1}
+                        onCheckedChange={(v) => toggle(c, v)}
+                        aria-label={t("categories.active")}
+                      />
+                    </div>
+                    <div className="mt-2 flex gap-1.5">
+                      <Link
+                        to={`/categories/${c.uuid}`}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground text-xs font-semibold"
+                      >
+                        <Eye className="size-3" /> {t("common.view")}
+                      </Link>
+                      <Link
+                        to={`/categories/${c.uuid}/edit`}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
+                      >
+                        <Pencil className="size-3" /> {t("common.edit")}
+                      </Link>
+                      <button
+                        onClick={() => setToDelete(c)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold ml-auto"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-2 flex gap-1.5">
-                    <Link
-                      to={`/categories/${c.uuid}`}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground text-xs font-semibold"
-                    >
-                      <Eye className="size-3" /> {t("common.view")}
-                    </Link>
-                    <Link
-                      to={`/categories/${c.uuid}/edit`}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
-                    >
-                      <Pencil className="size-3" /> {t("common.edit")}
-                    </Link>
-                    <button
-                      onClick={() => setToDelete(c)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold ml-auto"
-                    >
-                      <Trash2 className="size-3" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-      </ul>
+                </li>
+              );
+            })}
+        </ul>
+      </InfiniteScroll>
 
       <button
         onClick={() => {
           setForm(emptyForm);
           setOpenCreate(true);
         }}
-        className="fixed bottom-24 right-5 md:bottom-8 z-30 size-14 rounded-2xl gradient-brand shadow-pop grid place-items-center text-primary-foreground"
+        disabled={atMax}
+        className="fixed bottom-24 right-5 md:bottom-8 z-30 size-14 rounded-2xl gradient-brand shadow-pop grid place-items-center text-primary-foreground disabled:opacity-50"
         aria-label={t("categories.new")}
       >
         <Plus className="size-7" />
@@ -263,7 +302,11 @@ export function Component() {
             <DialogDescription>{t("categories.newSub")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={submitCreate} className="space-y-4">
-            <CategoryForm value={form} onChange={setForm} categories={cats} />
+            <CategoryForm
+              value={form}
+              onChange={setForm}
+              categories={categories}
+            />
             <DialogFooter className="gap-2">
               <button
                 type="button"

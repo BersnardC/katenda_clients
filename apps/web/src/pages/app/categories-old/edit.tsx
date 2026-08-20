@@ -3,62 +3,40 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import {
-  CategoryForm,
-  type CategoryFormValue,
-} from "@/components/categories/CategoryForm";
+import { CategoryForm, type CategoryFormValue } from "@/components/categories/CategoryForm";
 import { SkeletonForm } from "@/components/skeletons";
+import { useCategory, useAllCategories } from "@/hooks/useCategories-old";
 import { categoryService } from "@/services/categoryService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
-import type { Category } from "@/types/models";
 
 export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { uuid = "" } = useParams();
-  const [category, setCategory] = useState<Category | null>(null);
-  const [parents, setParents] = useState<Category[]>([]);
+  const { data: category, loading, error } = useCategory(uuid);
+  const { data: categories } = useAllCategories();
   const [form, setForm] = useState<CategoryFormValue | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-    categoryService
-      .show(uuid, { addons: "products_count" })
-      .then((res) => {
-        if (!alive) return;
-        setCategory(res.data);
-        setForm({
-          name: res.data.name,
-          image: res.data.image_url,
-          icon: res.data.icon || "Tag",
-          active: res.data.status === 1,
-          parentId: res.data.parent_id,
-        });
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
+    if (category) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setForm({
+        name: category.name,
+        image: category.image_url,
+        icon: category.icon || "Tag",
+        active: category.status === 1,
+        parentId: category.parent_id,
       });
-    categoryService
-      .index({ per_page: 100 })
-      .then((res) => {
-        if (alive) setParents(res.data);
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [uuid]);
+    } else {
+      setForm(null);
+    }
+  }, [uuid, category]);
 
   if (loading) {
     return <SkeletonForm />;
   }
 
-  if (error || !category || !form) {
+  if (error || !category) {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">{t("categories.notFound")}</p>
@@ -68,6 +46,8 @@ export function Component() {
       </div>
     );
   }
+
+  if (!form) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +99,7 @@ export function Component() {
         <CategoryForm
           value={form}
           onChange={setForm}
-          categories={parents}
+          categories={categories ?? []}
           excludeId={category.id}
         />
         <button

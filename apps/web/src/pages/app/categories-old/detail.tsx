@@ -1,45 +1,18 @@
-import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/IconPicker";
 import { SkeletonView } from "@/components/skeletons";
+import { useCategory, useAllCategories } from "@/hooks/useCategories-old";
 import { categoryService } from "@/services/categoryService";
-import type { Category } from "@/types/models";
 
 export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { uuid = "" } = useParams();
-  const [category, setCategory] = useState<Category | null>(null);
-  const [all, setAll] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    categoryService
-      .show(uuid, { addons: "products_count" })
-      .then((res) => {
-        if (alive) setCategory(res.data);
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    categoryService
-      .index({ per_page: 100 })
-      .then((res) => {
-        if (alive) setAll(res.data);
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [uuid]);
+  const { data: category, loading, error } = useCategory(uuid);
+  const { data: categories } = useAllCategories();
 
   if (loading) {
     return <SkeletonView tiles={4} />;
@@ -57,9 +30,10 @@ export function Component() {
   }
 
   const parent = category.parent_id
-    ? all.find((c) => c.id === category.parent_id)
+    ? categories?.find((c) => c.id === category.parent_id)
     : null;
-  const children = all.filter((c) => c.parent_id === category.id);
+  const children =
+    categories?.filter((c) => c.parent_id === category.id) ?? [];
 
   const remove = async () => {
     try {

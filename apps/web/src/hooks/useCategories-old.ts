@@ -4,7 +4,7 @@ import { useFetch } from "@/hooks/useFetch";
 import type { Category } from "@/types/models";
 import type { PaginationMeta } from "@/types/pagination";
 
-export const CATEGORIES_PAGE_SIZE = 5;
+export const CATEGORIES_PAGE_SIZE = 20;
 
 export function useDebouncedValue<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -17,12 +17,15 @@ export function useDebouncedValue<T>(value: T, delay: number): T {
   return debounced;
 }
 
-function clientMatch(c: Category, status: CategoryStatus, search: string): boolean {
+// Match por name (case-insensitive) + status. Usado para el filtro cliente
+// y para decidir si un item recién creado calza con el filtro visible.
+export function matchesCategoryFilter(
+  c: Category,
+  status: CategoryStatus,
+  search: string,
+): boolean {
   const term = search.trim().toLowerCase();
-  const matchText =
-    !term ||
-    c.name.toLowerCase().includes(term) ||
-    c.slug.toLowerCase().includes(term);
+  const matchText = !term || c.name.toLowerCase().includes(term);
   const matchStatus =
     status === "all" || (status === "active" ? c.status === 1 : c.status === 0);
   return matchText && matchStatus;
@@ -33,7 +36,7 @@ function filterItems(
   status: CategoryStatus,
   search: string,
 ): Category[] {
-  return pool.filter((c) => clientMatch(c, status, search));
+  return pool.filter((c) => matchesCategoryFilter(c, status, search));
 }
 
 // Listado híbrido: filtra en el cliente sobre el pool ya cargado y, si no
@@ -42,7 +45,7 @@ export function useHybridCategories() {
   const [q, setQState] = useState("");
   const [status, setStatusState] = useState<CategoryStatus>("all");
   const [mode, setMode] = useState<"client" | "server">("client");
-  const debouncedSearch = useDebouncedValue(q.trim(), 400);
+  const debouncedSearch = useDebouncedValue(q.trim(), 250);
 
   const [pages, setPages] = useState<Category[][]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -57,7 +60,7 @@ export function useHybridCategories() {
       mode === "server"
         ? {
             status,
-            search: debouncedSearch || undefined,
+            search: debouncedSearch || q.trim() || undefined,
             addons: "products_count",
             per_page: CATEGORIES_PAGE_SIZE,
           }
@@ -67,7 +70,7 @@ export function useHybridCategories() {
             addons: "products_count",
             per_page: CATEGORIES_PAGE_SIZE,
           },
-    [mode, status, debouncedSearch],
+    [mode, status, debouncedSearch, q],
   );
 
   useEffect(() => {
@@ -137,6 +140,29 @@ export function useHybridCategories() {
   const setQ = (v: string) => updateFilter(v, status);
   const setStatus = (v: CategoryStatus) => updateFilter(q, v);
 
+  // Optimistic helpers (sin refetch): mutan el pool localmente.
+  const prependCategory = useCallback((cat: Category) => {
+    setPages((p) => (p.length === 0 ? [[cat]] : [[cat, ...p[0]], ...p.slice(1)]));
+    setMeta((m) => (m ? { ...m, total: m.total + 1 } : m));
+  }, []);
+
+  const patchCategory = useCallback((uuid: string, patch: Partial<Category>) => {
+    setPages((p) =>
+      p.map((page) =>
+        page.map((c) => (c.uuid === uuid ? { ...c, ...patch } : c)),
+      ),
+    );
+  }, []);
+
+  const removeCategory = useCallback((uuid: string) => {
+    setPages((p) =>
+      p
+        .map((page) => page.filter((c) => c.uuid !== uuid))
+        .filter((page) => page.length > 0),
+    );
+    setMeta((m) => (m ? { ...m, total: Math.max(0, m.total - 1) } : m));
+  }, []);
+
   const items = mode === "server" ? poolItems : clientFiltered;
   const total = meta?.total;
   const hasMore = meta ? meta.current_page < meta.last_page : false;
@@ -150,12 +176,16 @@ export function useHybridCategories() {
     setQ,
     status,
     setStatus,
+    mode,
     hasMore,
     loadMore,
     loading,
     loadingMore,
     error,
     refetch,
+    prependCategory,
+    patchCategory,
+    removeCategory,
   };
 }
 
