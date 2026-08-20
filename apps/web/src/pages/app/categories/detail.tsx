@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/IconPicker";
 import { SkeletonView } from "@/components/skeletons";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { categoryService } from "@/services/categoryService";
 import type { Category } from "@/types/models";
 
@@ -16,6 +17,7 @@ export function Component() {
   const [all, setAll] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -159,12 +161,20 @@ export function Component() {
         )}
 
         <button
-          onClick={remove}
+          onClick={() => setOpenDelete(true)}
           className="w-full py-4 rounded-2xl bg-destructive/15 text-destructive font-semibold flex items-center justify-center gap-2"
         >
           <Trash2 className="size-4" /> {t("categories.deleteTitle")}
         </button>
       </div>
+
+      <ConfirmDeleteDialog
+        open={openDelete}
+        onOpenChange={setOpenDelete}
+        title={t("categories.deleteTitle")}
+        description={t("categories.deleteConfirm")}
+        onConfirm={remove}
+      />
     </>
   );
 }

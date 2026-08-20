@@ -10,17 +10,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@katenda_clients/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@katenda_clients/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import {
   CategoryForm,
   type CategoryFormValue,
@@ -230,28 +221,13 @@ export function Component() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
+      <ConfirmDeleteDialog
         open={!!toDelete}
         onOpenChange={(o) => !o && setToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("categories.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("categories.deleteConfirm")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={remove}
-              className="bg-destructive text-destructive-foreground"
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t("categories.deleteTitle")}
+        description={t("categories.deleteConfirm")}
+        onConfirm={remove}
+      />
     </>
   );
 }
