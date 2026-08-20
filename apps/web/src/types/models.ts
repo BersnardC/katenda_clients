@@ -85,6 +85,8 @@ export interface Category {
   status: number;
   products_count?: number;
   subcategories_count?: number;
+  parent?: Category | null;
+  children?: Category[];
   created_at: string;
   updated_at: string;
 }

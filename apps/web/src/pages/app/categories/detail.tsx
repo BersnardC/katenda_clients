@@ -14,7 +14,6 @@ export function Component() {
   const navigate = useNavigate();
   const { uuid = "" } = useParams();
   const [category, setCategory] = useState<Category | null>(null);
-  const [all, setAll] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -22,7 +21,7 @@ export function Component() {
   useEffect(() => {
     let alive = true;
     categoryService
-      .show(uuid, { addons: "products_count" })
+      .show(uuid, { addons: "products_count,parent,children" })
       .then((res) => {
         if (alive) setCategory(res.data);
       })
@@ -32,12 +31,6 @@ export function Component() {
       .finally(() => {
         if (alive) setLoading(false);
       });
-    categoryService
-      .index({ per_page: 100 })
-      .then((res) => {
-        if (alive) setAll(res.data);
-      })
-      .catch(() => undefined);
     return () => {
       alive = false;
     };
@@ -58,10 +51,8 @@ export function Component() {
     );
   }
 
-  const parent = category.parent_id
-    ? all.find((c) => c.id === category.parent_id)
-    : null;
-  const children = all.filter((c) => c.parent_id === category.id);
+  const parent = category.parent ?? null;
+  const children = category.children ?? [];
 
   const remove = async () => {
     try {
