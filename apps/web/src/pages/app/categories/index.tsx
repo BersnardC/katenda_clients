@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Eye, Pencil, Search } from "lucide-react";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@katenda_clients/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,8 @@ import {
   CategoryForm,
   type CategoryFormValue,
 } from "@/components/categories/CategoryForm";
-import { DynamicIcon } from "@/components/IconPicker";
+import { CategoryCard } from "@/components/categories/CategoryCard";
+import { CategorySkeleton } from "@/components/categories/CategorySkeleton";
 import { categoryService } from "@/services/categoryService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
 import type { Category } from "@/types/models";
@@ -181,68 +181,15 @@ export function Component() {
           </li>
         )}
         {!loading &&
-          visible.map((c) => {
-            const parent = c.parent_id
-              ? cats.find((p) => p.id === c.parent_id)
-              : null;
-            return (
-              <li
-                key={c.uuid}
-                className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
-              >
-                {c.image_url ? (
-                  <img
-                    src={c.image_url}
-                    alt={c.name}
-                    className="size-20 rounded-xl object-cover bg-muted"
-                  />
-                ) : (
-                  <div className="size-20 rounded-xl grid place-items-center bg-muted text-muted-foreground">
-                    <DynamicIcon name={c.icon} className="size-8" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{c.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {parent
-                          ? `↳ ${parent.name}`
-                          : t("categories.rootLabel")}
-                        {c.products_count !== undefined &&
-                          ` · ${c.products_count} ${t("categories.products")}`}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={c.status === 1}
-                      onCheckedChange={(v) => toggle(c, v)}
-                      aria-label={t("categories.active")}
-                    />
-                  </div>
-                  <div className="mt-2 flex gap-1.5">
-                    <Link
-                      to={`/categories/${c.uuid}`}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground text-xs font-semibold"
-                    >
-                      <Eye className="size-3" /> {t("common.view")}
-                    </Link>
-                    <Link
-                      to={`/categories/${c.uuid}/edit`}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-semibold"
-                    >
-                      <Pencil className="size-3" /> {t("common.edit")}
-                    </Link>
-                    <button
-                      onClick={() => setToDelete(c)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold ml-auto"
-                    >
-                      <Trash2 className="size-3" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+          visible.map((c) => (
+            <CategoryCard
+              key={c.uuid}
+              category={c}
+              parent={c.parent_id ? cats.find((p) => p.id === c.parent_id) ?? null : null}
+              onToggle={toggle}
+              onDelete={setToDelete}
+            />
+          ))}
       </ul>
 
       <button
@@ -306,27 +253,5 @@ export function Component() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
-}
-
-function CategorySkeleton() {
-  return (
-    <li className="flex gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft">
-      <div className="size-20 rounded-xl bg-muted animate-pulse" />
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="flex items-start gap-2">
-          <div className="flex-1 space-y-2">
-            <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
-            <div className="h-2.5 w-3/4 rounded bg-muted animate-pulse" />
-          </div>
-          <div className="h-6 w-11 rounded-full bg-muted animate-pulse" />
-        </div>
-        <div className="mt-2 flex gap-1.5">
-          <div className="h-6 w-14 rounded-lg bg-muted animate-pulse" />
-          <div className="h-6 w-16 rounded-lg bg-muted animate-pulse" />
-          <div className="h-6 w-8 rounded-lg bg-muted animate-pulse ml-auto" />
-        </div>
-      </div>
-    </li>
   );
 }
