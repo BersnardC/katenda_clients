@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Search, Crown } from "lucide-react";
+import { ArrowLeft, Plus, Search, Crown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -49,6 +49,7 @@ export function Component() {
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [openCreate, setOpenCreate] = useState(false);
   const [openLimit, setOpenLimit] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<CategoryFormValue>(emptyForm);
   const [toDelete, setToDelete] = useState<Category | null>(null);
 
@@ -104,6 +105,7 @@ export function Component() {
 
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (creating) return;
     if (!form.name.trim()) {
       toast.error(t("categories.nameRequired"));
       return;
@@ -112,6 +114,7 @@ export function Component() {
       setOpenLimit(true);
       return;
     }
+    setCreating(true);
     try {
       const res = await categoryService.create({
         name: form.name.trim(),
@@ -130,6 +133,8 @@ export function Component() {
       load();
     } catch (err) {
       toast.error(errMsg(err, t("categories.createError")));
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -279,7 +284,13 @@ export function Component() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+      <Dialog
+        open={openCreate}
+        onOpenChange={(o) => {
+          if (creating && !o) return;
+          setOpenCreate(o);
+        }}
+      >
         <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("categories.new")}</DialogTitle>
@@ -291,15 +302,18 @@ export function Component() {
               <button
                 type="button"
                 onClick={() => setOpenCreate(false)}
-                className="px-4 h-11 rounded-2xl bg-muted font-semibold text-sm"
+                disabled={creating}
+                className="px-4 h-11 rounded-2xl bg-muted font-semibold text-sm cursor-pointer disabled:opacity-60"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
-                className="px-5 h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm shadow-pop"
+                disabled={creating}
+                className="flex items-center gap-2 px-5 h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm shadow-pop cursor-pointer disabled:opacity-60"
               >
-                {t("categories.create")}
+                {creating && <Loader2 className="size-4 animate-spin" />}
+                {creating ? t("categories.creating") : t("categories.create")}
               </button>
             </DialogFooter>
           </form>

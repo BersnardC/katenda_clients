@@ -114,6 +114,7 @@ const dict = {
     "store.cart": "Pedir por WhatsApp",
     "store.added": "Añadido al carrito",
     "common.loading": "Cargando...",
+    "common.saving": "Guardando…",
     "common.loadMore": "Cargar más",
     "common.loadedOf": "{loaded} de {total}",
     "common.empty": "Sin resultados",
@@ -217,6 +218,7 @@ const dict = {
     "categories.limitSub":
       "Alcanzaste el límite de categorías de tu plan. Elimina algunas o considera actualizar tu plan para seguir creando.",
     "categories.limitOk": "Entendido",
+    "categories.creating": "Creando categoría…",
     "iconPicker.title": "Seleccionar icono",
     "iconPicker.subtitle": "Busca entre todos los iconos disponibles.",
     "iconPicker.search": "Buscar por nombre (ej. shirt, phone)...",
@@ -334,6 +336,7 @@ const dict = {
     "store.cart": "Order on WhatsApp",
     "store.added": "Added to cart",
     "common.loading": "Loading...",
+    "common.saving": "Saving…",
     "common.loadMore": "Load more",
     "common.loadedOf": "{loaded} of {total}",
     "common.empty": "No results",
@@ -434,6 +437,7 @@ const dict = {
     "categories.limitSub":
       "You've reached your plan's category limit. Delete a few or consider upgrading your plan to keep creating.",
     "categories.limitOk": "Got it",
+    "categories.creating": "Creating category…",
     "iconPicker.title": "Select icon",
     "iconPicker.subtitle": "Search among all available icons.",
     "iconPicker.search": "Search by name (e.g. shirt, phone)...",

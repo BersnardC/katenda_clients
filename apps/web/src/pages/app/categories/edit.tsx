@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -20,6 +20,7 @@ export function Component() {
   const [parents, setParents] = useState<Category[]>([]);
   const [form, setForm] = useState<CategoryFormValue | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -71,10 +72,12 @@ export function Component() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     if (!form.name.trim()) {
       toast.error(t("categories.nameRequired"));
       return;
     }
+    setSaving(true);
     try {
       await categoryService.update(category.uuid, {
         name: form.name.trim(),
@@ -97,6 +100,8 @@ export function Component() {
           ? err.message
           : t("categories.updateError"),
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -124,9 +129,11 @@ export function Component() {
         />
         <button
           type="submit"
-          className="w-full py-4 rounded-2xl gradient-brand text-primary-foreground font-semibold shadow-pop"
+          disabled={saving}
+          className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl gradient-brand text-primary-foreground font-semibold shadow-pop cursor-pointer disabled:opacity-60"
         >
-          {t("common.save")}
+          {saving && <Loader2 className="size-4 animate-spin" />}
+          {saving ? t("common.saving") : t("common.save")}
         </button>
       </form>
     </>
