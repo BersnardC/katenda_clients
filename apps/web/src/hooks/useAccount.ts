@@ -1,8 +1,12 @@
-import { useFetch } from "@/hooks/useFetch";
-import { accountService } from "@/services/accountService";
+import { useApp } from "@/contexts/AppContext";
 
 export function useSubscription() {
-  return useFetch(() => accountService.subscription());
+  const { subscription, subscriptionLoading, refetchSubscription } = useApp();
+  return {
+    data: subscription ? { subscription } : undefined,
+    loading: subscriptionLoading,
+    refetch: refetchSubscription,
+  };
 }
 
 export function usePlanLimit(feature: string): number | undefined {

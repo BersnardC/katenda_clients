@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Search } from "lucide-react";
+import { ArrowLeft, Plus, Search, Crown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@katenda_clients/ui/dialog";
 import { useI18n } from "@/lib/i18n";
+import { usePlanLimit } from "@/hooks/useAccount";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import {
   CategoryForm,
@@ -24,7 +25,7 @@ import { slugify, dataUrlToFile } from "@/lib/utils";
 import type { Category } from "@/types/models";
 import type { PaginationMeta } from "@/types/pagination";
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 20;
 
 const emptyForm: CategoryFormValue = {
   name: "",
@@ -47,8 +48,13 @@ export function Component() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [openCreate, setOpenCreate] = useState(false);
+  const [openLimit, setOpenLimit] = useState(false);
   const [form, setForm] = useState<CategoryFormValue>(emptyForm);
   const [toDelete, setToDelete] = useState<Category | null>(null);
+
+  const limit = usePlanLimit("categories");
+  const totalCount = meta?.total ?? 0;
+  const atMax = limit !== undefined && totalCount >= limit;
 
   const term = q.trim().toLowerCase();
   const visible = cats.filter((c) => {
@@ -100,6 +106,10 @@ export function Component() {
     e.preventDefault();
     if (!form.name.trim()) {
       toast.error(t("categories.nameRequired"));
+      return;
+    }
+    if (atMax) {
+      setOpenLimit(true);
       return;
     }
     try {
@@ -158,7 +168,14 @@ export function Component() {
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <h1 className="font-display font-bold text-2xl">{t("nav.categories")}</h1>
+        <h1 className="font-display font-bold text-2xl">
+          {t("nav.categories")}
+          {limit !== undefined && (
+            <span className="pl-2 font-semibold text-[10px] text-muted-foreground">
+              {totalCount} / {limit}
+            </span>
+          )}
+        </h1>
       </header>
 
       <div className="px-5 mt-3 space-y-3">
@@ -223,6 +240,10 @@ export function Component() {
 
       <button
         onClick={() => {
+          if (atMax) {
+            setOpenLimit(true);
+            return;
+          }
           setForm(emptyForm);
           setOpenCreate(true);
         }}
@@ -231,6 +252,32 @@ export function Component() {
       >
         <Plus className="size-7" />
       </button>
+
+      <Dialog open={openLimit} onOpenChange={setOpenLimit}>
+        <DialogContent className="max-w-sm">
+          <div className="flex flex-col items-center gap-3 pt-2 text-center">
+            <span className="size-14 grid place-items-center rounded-2xl gradient-brand shadow-pop text-primary-foreground">
+              <Crown className="size-7" />
+            </span>
+            <DialogHeader>
+              <DialogTitle className="text-xl">
+                {t("categories.limitTitle")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("categories.limitSub")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="w-full">
+              <button
+                onClick={() => setOpenLimit(false)}
+                className="w-full h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm shadow-pop"
+              >
+                {t("categories.limitOk")}
+              </button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">

@@ -213,6 +213,10 @@ const dict = {
     "categories.imageRemoveError": "Error al eliminar la imagen",
     "categories.limitReached":
       "Alcanzaste el límite de categorías de tu plan.",
+    "categories.limitTitle": "Límite de tu plan",
+    "categories.limitSub":
+      "Alcanzaste el límite de categorías de tu plan. Elimina algunas o considera actualizar tu plan para seguir creando.",
+    "categories.limitOk": "Entendido",
     "iconPicker.title": "Seleccionar icono",
     "iconPicker.subtitle": "Busca entre todos los iconos disponibles.",
     "iconPicker.search": "Buscar por nombre (ej. shirt, phone)...",
@@ -426,6 +430,10 @@ const dict = {
     "categories.removeImage": "Remove image",
     "categories.imageRemoveError": "Failed to remove image",
     "categories.limitReached": "You've reached your plan's category limit.",
+    "categories.limitTitle": "Plan limit",
+    "categories.limitSub":
+      "You've reached your plan's category limit. Delete a few or consider upgrading your plan to keep creating.",
+    "categories.limitOk": "Got it",
     "iconPicker.title": "Select icon",
     "iconPicker.subtitle": "Search among all available icons.",
     "iconPicker.search": "Search by name (e.g. shirt, phone)...",
