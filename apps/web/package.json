@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@katenda_clients/ui": "workspace:*",
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.30.0",
     "react": "^19.2.8",

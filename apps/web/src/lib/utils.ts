@@ -20,5 +20,7 @@ export async function dataUrlToFile(
 ): Promise<File> {
   const res = await fetch(dataUrl);
   const blob = await res.blob();
-  return new File([blob], filename, { type: blob.type });
+  const ext = blob.type.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
+  const base = filename.replace(/\.[^/.]+$/, "") || "image";
+  return new File([blob], `${base}.${ext}`, { type: blob.type });
 }

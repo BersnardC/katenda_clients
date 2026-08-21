@@ -3,6 +3,7 @@ import { X, Upload, ImageIcon, Check, ChevronDown, Search } from "lucide-react";
 import { Switch } from "@katenda_clients/ui/switch";
 import { useI18n } from "@/lib/i18n";
 import { IconPicker, DynamicIcon } from "@/components/IconPicker";
+import { compressImage } from "@/lib/image";
 import type { Category } from "@/types/models";
 
 export type CategoryFormValue = {
@@ -33,12 +34,17 @@ export function CategoryForm({
   const set = (patch: Partial<CategoryFormValue>) =>
     onChange({ ...value, ...patch });
 
-  const handleFile = (file?: File | null) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return;
+  const handleFile = async (file?: File | null) => {
+    if (!file || !file.type.startsWith("image/")) return;
     const reader = new FileReader();
-    reader.onload = () => set({ image: reader.result as string });
-    reader.readAsDataURL(file);
+    try {
+      const optimized = await compressImage(file);
+      reader.onload = () => set({ image: reader.result as string });
+      reader.readAsDataURL(optimized);
+    } catch {
+      reader.onload = () => set({ image: reader.result as string });
+      reader.readAsDataURL(file);
+    }
   };
 
   const parentOptions = useMemo(
