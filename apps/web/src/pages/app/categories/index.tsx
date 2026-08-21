@@ -18,9 +18,13 @@ import {
 } from "@/components/categories/CategoryForm";
 import { CategoryCard } from "@/components/categories/CategoryCard";
 import { CategorySkeleton } from "@/components/categories/CategorySkeleton";
+import { ItemsPaginator } from "@/components/ItemsPaginator";
 import { categoryService } from "@/services/categoryService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
 import type { Category } from "@/types/models";
+import type { PaginationMeta } from "@/types/pagination";
+
+const PAGE_SIZE = 2;
 
 const emptyForm: CategoryFormValue = {
   name: "",
@@ -37,16 +41,14 @@ export function Component() {
   /* Declarations */
   const { t } = useI18n();
   const [cats, setCats] = useState<Category[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState<CategoryFormValue>(emptyForm);
   const [toDelete, setToDelete] = useState<Category | null>(null);
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const term = q.trim().toLowerCase();
   const visible = cats.filter((c) => {
@@ -66,10 +68,33 @@ export function Component() {
   /* Functions */
   const load = () => {
     categoryService
-      .index({ per_page: 100, addons: "products_count" })
-      .then((res) => setCats(res.data))
+      .index({ page: 1, per_page: PAGE_SIZE, addons: "products_count" })
+      .then((res) => {
+        setCats(res.data);
+        setMeta(res.meta);
+      })
       .finally(() => setLoading(false));
   };
+
+  const loadMore = () => {
+    if (loadingMore || !meta || meta.current_page >= meta.last_page) return;
+    setLoadingMore(true);
+    categoryService
+      .index({
+        page: meta.current_page + 1,
+        per_page: PAGE_SIZE,
+        addons: "products_count",
+      })
+      .then((res) => {
+        setCats((prev) => [...prev, ...res.data]);
+        setMeta(res.meta);
+      })
+      .finally(() => setLoadingMore(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +185,9 @@ export function Component() {
               {tab.label}
             </button>
           ))}
+          <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">
+            {cats.length}/{meta?.total ?? 0}
+          </span>
         </div>
       </div>
 
@@ -184,6 +212,14 @@ export function Component() {
             />
           ))}
       </ul>
+
+      <ItemsPaginator
+        loaded={cats.length}
+        total={meta?.total ?? 0}
+        hasMore={meta ? meta.current_page < meta.last_page : false}
+        loadingMore={loadingMore}
+        onLoadMore={loadMore}
+      />
 
       <button
         onClick={() => {
