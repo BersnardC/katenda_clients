@@ -22,6 +22,8 @@ pnpm --filter web check-types  # tsc -b --noEmit
 > **Regla de oro:** todo módulo CRUD nuevo es una **copia estructural del módulo `categories`** — misma anatomía, mismo flujo, mismas validaciones, mismos componentes. Consistencia > inventiva.
 >
 > **Código canónico:** `src/pages/app/categories/*` + `src/components/categories/*`. Ante cualquier duda sobre el patrón, leer esos archivos.
+>
+> **Segundo módulo de referencia:** `src/pages/app/roles/*` + `src/components/roles/*` — mismo patrón, pero con el **detalle/edit fiel al diseño Lovable** (card hero compacta + stats con iconos + footer editar/eliminar; form con labels chicos arriba) y guard de roles default (Switch disabled, sin delete). Usarlo de referencia para módulos con reglas de negocio similares.
 
 ### Orden de código obligatorio en cada archivo
 
@@ -86,6 +88,13 @@ src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit
 { path: "x/:uuid/edit", lazy: () => import("./pages/app/x/edit") },
 ```
 
+### Variante index-only (Usuarios)
+
+> Cuando la API **no expone `show`** (ej. `GET /users/{uuid}` no existe), el módulo NO tiene `detail.tsx`/`edit.tsx`. Estructura:
+> - `pages/app/users/index.tsx`: listado + **Dialog crear** + **Dialog editar** (rol/status) inline.
+> - La edición usa `update` (cambiar rol) y `deactivate`/`activate` (status); 403/409 llegan del backend → `toast.error(errMsg(...))`.
+> - Mismo resto del patrón: header `{total}/{limit}`, search + tabs, `ItemsPaginator`, FAB + Dialog límite (Crown), `ConfirmDeleteDialog`.
+
 ### Imágenes (si el módulo tiene media)
 Exactamente como en categorías:
 - `handleFile` async → `compressImage(file)` de `src/lib/image.ts` (≤1MB, máx 1600px, WebP con fallback, web worker) → `FileReader.readAsDataURL` → data-URL en estado (try/catch con fallback al original).
@@ -118,5 +127,5 @@ Solo vía hooks de `hooks/useAccount.ts`: `usePlanLimit(feature)`, `useSubscript
 | Patrón de módulo (este doc) | `katenda_clients/AGENTS.md` |
 | Contrato API / backend | `katenda_api/AGENTS.md` + `katenda_api/_context/app-doc.md` |
 | Roadmap y estado del frontend | `ROADMAP.md` (raíz del workspace) |
-| Diseño de referencia | `katenda-web` (Next.js) — port fiel |
-| Código canónico del patrón | `apps/web/src/pages/app/categories/*` |
+| Diseño de referencia | `katenda-web` (Next.js) para módulos ya portados; **`katenda-your-online-storefront` (Lovable) para los módulos que katenda-web no cubre** |
+| Código canónico del patrón | `apps/web/src/pages/app/categories/*` (+ `roles/*` para detalle/edit fiel a Lovable) |
