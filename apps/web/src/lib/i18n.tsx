@@ -214,10 +214,6 @@ const dict = {
     "categories.imageRemoveError": "Error al eliminar la imagen",
     "categories.limitReached":
       "Alcanzaste el límite de categorías de tu plan.",
-    "categories.limitTitle": "Límite de tu plan",
-    "categories.limitSub":
-      "Alcanzaste el límite de categorías de tu plan. Elimina algunas o considera actualizar tu plan para seguir creando.",
-    "categories.limitOk": "Entendido",
     "categories.creating": "Creando categoría…",
     "roles.title": "Roles",
     "roles.new": "Nuevo rol",
@@ -265,11 +261,11 @@ const dict = {
     "roles.empty": "Sin roles",
     "roles.noPerms": "Este rol no tiene permisos asignados.",
     "roles.createdLabel": "Creado",
-    "roles.limitTitle": "Límite de tu plan",
-    "roles.limitSub":
-      "Alcanzaste el límite de roles de tu plan. Elimina algunos o considera actualizar tu plan para seguir creando.",
-    "roles.limitOk": "Entendido",
     "roles.creating": "Creando rol…",
+    "plan.limitTitle": "Límite de tu plan",
+    "plan.limitSub":
+      "Alcanzaste el límite de {feature} de tu plan. Elimina lo que no necesites o considera actualizar tu plan para seguir creando.",
+    "plan.limitOk": "Entendido",
     "iconPicker.title": "Seleccionar icono",
     "iconPicker.subtitle": "Busca entre todos los iconos disponibles.",
     "iconPicker.search": "Buscar por nombre (ej. shirt, phone)...",
@@ -484,10 +480,6 @@ const dict = {
     "categories.removeImage": "Remove image",
     "categories.imageRemoveError": "Failed to remove image",
     "categories.limitReached": "You've reached your plan's category limit.",
-    "categories.limitTitle": "Plan limit",
-    "categories.limitSub":
-      "You've reached your plan's category limit. Delete a few or consider upgrading your plan to keep creating.",
-    "categories.limitOk": "Got it",
     "categories.creating": "Creating category…",
     "roles.title": "Roles",
     "roles.new": "New role",
@@ -534,11 +526,11 @@ const dict = {
     "roles.empty": "No roles",
     "roles.noPerms": "This role has no permissions assigned.",
     "roles.createdLabel": "Created",
-    "roles.limitTitle": "Plan limit",
-    "roles.limitSub":
-      "You've reached your plan's role limit. Remove some roles or consider upgrading your plan to keep creating.",
-    "roles.limitOk": "Got it",
     "roles.creating": "Creating role…",
+    "plan.limitTitle": "Plan limit",
+    "plan.limitSub":
+      "You've reached your plan's {feature} limit. Remove what you don't need or consider upgrading your plan to keep creating.",
+    "plan.limitOk": "Got it",
     "iconPicker.title": "Select icon",
     "iconPicker.subtitle": "Search among all available icons.",
     "iconPicker.search": "Search by name (e.g. shirt, phone)...",

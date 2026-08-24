@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Search, Crown } from "lucide-react";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@katenda_clients/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { usePlanLimit } from "@/hooks/useAccount";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { RoleCard } from "@/components/roles/RoleCard";
 import { RoleSkeleton } from "@/components/roles/RoleSkeleton";
 import { ItemsPaginator } from "@/components/ItemsPaginator";
@@ -206,29 +199,11 @@ export function Component() {
         <Plus className="size-7" />
       </button>
 
-      <Dialog open={openLimit} onOpenChange={setOpenLimit}>
-        <DialogContent className="max-w-sm">
-          <div className="flex flex-col items-center gap-3 pt-2 text-center">
-            <span className="size-14 grid place-items-center rounded-2xl gradient-brand shadow-pop text-primary-foreground">
-              <Crown className="size-7" />
-            </span>
-            <DialogHeader>
-              <DialogTitle className="text-xl">
-                {t("roles.limitTitle")}
-              </DialogTitle>
-              <DialogDescription>{t("roles.limitSub")}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="w-full">
-              <button
-                onClick={() => setOpenLimit(false)}
-                className="w-full h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm shadow-pop"
-              >
-                {t("roles.limitOk")}
-              </button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PlanLimitDialog
+        open={openLimit}
+        onOpenChange={setOpenLimit}
+        feature={t("roles.title").toLowerCase()}
+      />
 
       <ConfirmDeleteDialog
         open={!!toDelete}
