@@ -254,6 +254,14 @@ const dict = {
     "roles.inactiveLabel": "Inactivo",
     "roles.defaultLabel": "Por defecto",
     "roles.clearPerms": "Limpiar",
+    "roles.selectAll": "Todos",
+    "roles.selectNone": "Ninguno",
+    "roles.module.stores": "Tiendas",
+    "roles.module.products": "Productos",
+    "roles.module.categories": "Categorías",
+    "roles.module.users": "Usuarios",
+    "roles.module.roles": "Roles",
+    "roles.module.subscription": "Suscripción",
     "roles.empty": "Sin roles",
     "roles.noPerms": "Este rol no tiene permisos asignados.",
     "roles.createdLabel": "Creado",
@@ -515,6 +523,14 @@ const dict = {
     "roles.inactiveLabel": "Inactive",
     "roles.defaultLabel": "Default",
     "roles.clearPerms": "Clear",
+    "roles.selectAll": "All",
+    "roles.selectNone": "None",
+    "roles.module.stores": "Stores",
+    "roles.module.products": "Products",
+    "roles.module.categories": "Categories",
+    "roles.module.users": "Users",
+    "roles.module.roles": "Roles",
+    "roles.module.subscription": "Subscription",
     "roles.empty": "No roles",
     "roles.noPerms": "This role has no permissions assigned.",
     "roles.createdLabel": "Created",
@@ -537,7 +553,7 @@ const dict = {
   },
 } as const;
 
-type Key = keyof (typeof dict)["es"];
+export type Key = keyof (typeof dict)["es"];
 
 type Ctx = {
   lang: Lang;
