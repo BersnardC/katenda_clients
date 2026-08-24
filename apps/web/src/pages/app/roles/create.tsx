@@ -7,7 +7,7 @@ import {
   RoleForm,
   type RoleFormValue,
 } from "@/components/roles/RoleForm";
-import { SkeletonForm } from "@/components/skeletons";
+import { RoleFormSkeleton } from "@/components/roles/RoleFormSkeleton";
 import { roleService } from "@/services/roleService";
 import { permissionService } from "@/services/permissionService";
 import type { Permission } from "@/types/models";
@@ -42,7 +42,7 @@ export function Component() {
   }, []);
 
   if (loading) {
-    return <SkeletonForm />;
+    return <RoleFormSkeleton />;
   }
 
   const submit = async (e: React.FormEvent) => {

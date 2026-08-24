@@ -29,11 +29,11 @@ export function RoleCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="font-semibold text-sm truncate">{role.name}</p>
-              {isDefault && (
+              {/* isDefault && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground shrink-0">
                   {t("roles.defaultLabel")}
                 </span>
-              )}
+              ) */}
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                   role.status === 1
@@ -46,9 +46,9 @@ export function RoleCard({
                   : t("roles.inactiveLabel")}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground font-mono truncate">
+            {/* <p className="text-xs text-muted-foreground font-mono truncate">
               {role.scope}
-            </p>
+            </p> */}
             <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
               {perms} {t("roles.permCount")} · {role.users_count ?? 0}{" "}
               {t("roles.users")}

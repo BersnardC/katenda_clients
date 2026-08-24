@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { SkeletonView } from "@/components/skeletons";
+import { RoleDetailSkeleton } from "@/components/roles/RoleDetailSkeleton";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { groupPermissions } from "@/components/roles/permissionGroups";
 import { roleService } from "@/services/roleService";
@@ -45,7 +45,7 @@ export function Component() {
   }, [uuid]);
 
   if (loading) {
-    return <SkeletonView tiles={4} />;
+    return <RoleDetailSkeleton />;
   }
 
   if (error || !role) {

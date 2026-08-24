@@ -7,7 +7,7 @@ import {
   RoleForm,
   type RoleFormValue,
 } from "@/components/roles/RoleForm";
-import { SkeletonForm } from "@/components/skeletons";
+import { RoleFormSkeleton } from "@/components/roles/RoleFormSkeleton";
 import { roleService } from "@/services/roleService";
 import { permissionService } from "@/services/permissionService";
 import type { Role, Permission } from "@/types/models";
@@ -53,7 +53,7 @@ export function Component() {
   }, [uuid]);
 
   if (loading) {
-    return <SkeletonForm />;
+    return <RoleFormSkeleton />;
   }
 
   if (error || !role || !form) {
