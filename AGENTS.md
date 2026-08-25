@@ -19,11 +19,11 @@ pnpm --filter web check-types  # tsc -b --noEmit
 
 ## PATRÓN DE MÓDULO — El estándar es Categorías
 
-> **Regla de oro:** todo módulo CRUD nuevo es una **copia estructural del módulo `categories`** — misma anatomía, mismo flujo, mismas validaciones, mismos componentes. Consistencia > inventiva.
+> **Regla de oro:** todo módulo CRUD nuevo tendra como estructura base y ejemplo el  **módulo `categories`** — anatomia similar, mismo flujo, mismas validaciones, mismos componentes. Consistencia > inventiva, si el create es aparte entonces se debe crear una nueva vista y no un dialog, en ese caso tomar como referencia `src/components/categories/create.tsx`.
 >
 > **Código canónico:** `src/pages/app/categories/*` + `src/components/categories/*`. Ante cualquier duda sobre el patrón, leer esos archivos.
 >
-> **Segundo módulo de referencia:** `src/pages/app/roles/*` + `src/components/roles/*` — mismo patrón, pero con el **detalle/edit fiel al diseño Lovable** (card hero compacta + stats con iconos + footer editar/eliminar; form con labels chicos arriba) y guard de roles default (Switch disabled, sin delete). Usarlo de referencia para módulos con reglas de negocio similares.
+> Importante a menos que se indique un maquetado especifico, basarse o COPIAR exactamente solo basarse en el diseno de `src/components/categories/*`
 
 ### Orden de código obligatorio en cada archivo
 
@@ -37,7 +37,8 @@ pnpm --filter web check-types  # tsc -b --noEmit
 ### Estructura de archivos por módulo `X`
 
 ```
-src/pages/app/x/index.tsx          # listado + dialog crear
+src/pages/app/x/index.tsx          # listado + dialog crear (confirmar)
+src/pages/app/x/create.tsx         # vista crear (confirmar)
 src/pages/app/x/detail.tsx         # vista detalle
 src/pages/app/x/edit.tsx           # edición
 src/components/x/XForm.tsx         # formulario compartido (create + edit)
@@ -46,12 +47,12 @@ src/components/x/XSkeleton.tsx     # skeleton de card
 src/services/xService.ts           # fetch puro, envelopes reales
 src/types/models.ts                # interfaces X y XData (+X)
 src/lib/i18n.tsx                   # claves "x.*" en es y en
-src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit
+src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit, x/create (opcional-confirmar)
 ```
 
 ### Anatomía de cada archivo
 
-**`index.tsx`** (copy de `categories/index.tsx`):
+**`index.tsx`** (Basarse en `categories/index.tsx`):
 - Header: back arrow → título + contador `{total} / {limit}` con `usePlanLimit("x")`.
 - Search input + tabs de status (`all/active/inactive`), contador `cats.length/meta.total`.
 - Lista `<ul>` de `XCard`; skeletons en loading; empty state con `t("common.empty")`.
@@ -63,19 +64,19 @@ src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit
 - Estados en orden: items, meta, loading, loadingMore, q, status, openCreate, openLimit, creating, form, toDelete. Constantes `PAGE_SIZE`, `emptyForm`, helper `errMsg`.
 - Validación mínima cliente: nombre requerido → `toast.error`; límite → dialog.
 
-**`detail.tsx`** (copy de `categories/detail.tsx`):
+**`detail.tsx`** (Basarse de `categories/detail.tsx`):
 - `SkeletonView` en loading; estado notFound con link back.
 - Header: back + título + botón editar (lápiz).
 - Imagen o fallback; grid de `InfoTile` (label/value/accent); secciones relacionadas; botón eliminar → `ConfirmDeleteDialog` → `destroy` → navigate al index.
 
-**`edit.tsx`** (copy de `categories/edit.tsx`):
+**`edit.tsx`** (Basarse de `categories/edit.tsx`):
 - `SkeletonForm` en loading; notFound con link back.
 - Carga `show` (con addons si aplica) → inicializa `form`; carga extras en paralelo (ej. lista de padres).
 - `submit`: valida → `update` → si hay imagen nueva (`form.image.startsWith("data:")`) → `dataUrlToFile` → `uploadImage`; si se quitó → `removeImage` → `toast.success` → `navigate` al detalle.
 
 **`XForm.tsx`**: componente **controlado** (`value`/`onChange`, patch con `set = (p) => onChange({...value, ...p})`); dropzone + input file oculto; campos con clase `inputCls`; switch de activo.
 
-**`xService.ts`** (copy de `categoryService.ts`): `index` (Paginated + query params), `show`, `create`, `update`, `deactivate`, `activate`, `destroy` (204), `uploadImage`/`removeImage` (media). Helper local `buildQuery`. Envelopes reales: `{ data, links, meta }` / `{ data }` / 204 / `{ message }`.
+**`xService.ts`** (Basarse de `categoryService.ts`): `index` (Paginated + query params), `show`, `create`, `update`, `deactivate`, `activate`, `destroy` (204), `uploadImage`/`removeImage` (media). Helper local `buildQuery`. Envelopes reales: `{ data, links, meta }` / `{ data }` / 204 / `{ message }`.
 
 **`types/models.ts`**: `X` (relaciones opcionales con `?`) + `XData` (payload de create/update con `status?: 0 | 1`).
 
@@ -84,6 +85,7 @@ src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit
 **`App.tsx`**: rutas lazy dentro del layout app:
 ```tsx
 { path: "x", lazy: () => import("./pages/app/x/index") },
+{ path: "x/create", lazy: () => import("./pages/app/x/create") }, /* Opcional, confirmar si requiere */
 { path: "x/:uuid", lazy: () => import("./pages/app/x/detail") },
 { path: "x/:uuid/edit", lazy: () => import("./pages/app/x/edit") },
 ```
