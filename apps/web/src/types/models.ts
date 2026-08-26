@@ -127,9 +127,9 @@ export interface RoleData {
   permission_ids?: number[];
 }
 
-// UserResource del nuevo contrato: role_id/status planos (del pivot),
+// UserResource de /users — role_id/status planos (del pivot account_users),
 // NO hay campo `pivot` anidado como en el ROADMAP anterior.
-export interface AccountUser {
+export interface User {
   id: number;
   uuid: string;
   name: string;
@@ -140,8 +140,17 @@ export interface AccountUser {
   role_id?: number | null;
   status?: number;
   roles?: Role[];
+  avatar?: string | null; // display-only: la API no lo envía hoy → fallback a iniciales
   created_at: string;
   updated_at: string;
+}
+
+export interface UserData {
+  name: string;
+  email: string;
+  password?: string;
+  role_id: number;
+  status?: 0 | 1;
 }
 
 export interface Account {

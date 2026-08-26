@@ -90,12 +90,14 @@ src/App.tsx                        # 3 rutas lazy: x, x/:uuid, x/:uuid/edit, x/c
 { path: "x/:uuid/edit", lazy: () => import("./pages/app/x/edit") },
 ```
 
-### Variante index-only (Usuarios)
+### Variante index-only (módulos sin `show`)
 
-> Cuando la API **no expone `show`** (ej. `GET /users/{uuid}` no existe), el módulo NO tiene `detail.tsx`/`edit.tsx`. Estructura:
-> - `pages/app/users/index.tsx`: listado + **Dialog crear** + **Dialog editar** (rol/status) inline.
-> - La edición usa `update` (cambiar rol) y `deactivate`/`activate` (status); 403/409 llegan del backend → `toast.error(errMsg(...))`.
+> Cuando la API **no expone `show`** (ej. algún recurso sin `GET /{uuid}`), el módulo NO tiene `detail.tsx`/`edit.tsx`. Estructura:
+> - `pages/app/x/index.tsx`: listado + **Dialog crear** + **Dialog editar** inline.
+> - La edición usa `update` y `deactivate`/`activate` (status); 403/409 llegan del backend → `toast.error(errMsg(...))`.
 > - Mismo resto del patrón: header `{total}/{limit}`, search + tabs, `ItemsPaginator`, FAB + Dialog límite (Crown), `ConfirmDeleteDialog`.
+>
+> ⚠️ **Usuarios NO usa esta variante**: desde que `GET /users/{uuid}` existe, sigue el patrón completo (index/create/detail/edit) como roles.
 
 ### Imágenes (si el módulo tiene media)
 Exactamente como en categorías:
