@@ -1,5 +1,11 @@
 import { useI18n } from "@/lib/i18n";
 import type { Role } from "@/types/models";
+import { Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+ } from "@katenda_clients/ui/select";
 
 export type UserFormValue = {
   name: string;
@@ -25,8 +31,6 @@ export function UserForm({
     onChange({ ...value, ...patch });
 
   const inputCls =
-    "w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm";
-  const selectCls =
     "w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm";
 
   return (
@@ -98,23 +102,18 @@ export function UserForm({
         >
           {t("users.role")}
         </label>
-        <select
-          id="uf-role"
-          value={value.role_id ?? ""}
-          onChange={(e) =>
-            set({ role_id: e.target.value ? Number(e.target.value) : null })
-          }
-          className={selectCls}
-        >
-          <option value="" disabled>
-            {t("users.rolePlaceholder")}
-          </option>
-          {roles.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <Select value={value.role_id?.toString() ?? ""} onValueChange={(v) => set({ role_id: v ? Number(v) : null })}>
+          <SelectTrigger className="w-full h-12 rounded-2xl bg-surface border-border">
+            <SelectValue placeholder="Selecciona un rol" />
+          </SelectTrigger>
+          <SelectContent>
+            {roles.map((r) => (
+              <SelectItem key={r.id} value={r.id.toString()}>
+                {r.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
