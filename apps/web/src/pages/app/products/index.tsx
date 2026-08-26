@@ -62,7 +62,7 @@ export function Component() {
         setMeta(res.meta);
       })
       .finally(() => setLoading(false));
-  }, [status]);
+  }, []); /* status */
 
   const loadMore = () => {
     if (loadingMore || !meta || meta.current_page >= meta.last_page) return;

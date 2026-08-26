@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Store } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { usePlanLimit } from "@/hooks/useAccount";
@@ -11,7 +11,6 @@ import {
 import { ProductFormSkeleton } from "@/components/products/ProductFormSkeleton";
 import { productService } from "@/services/productService";
 import { categoryService } from "@/services/categoryService";
-import { storeService } from "@/services/storeService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
 import type { Category } from "@/types/models";
 
@@ -35,23 +34,15 @@ export function Component() {
   const [form, setForm] = useState<ProductFormValue>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [noStore, setNoStore] = useState(false);
 
   const mediaLimit = usePlanLimit("media_per_product");
 
   useEffect(() => {
     let alive = true;
-    Promise.all([
-      storeService.list({ per_page: 1 }),
-      categoryService.index({ page: 1, per_page: 100, status: "active" }),
-    ])
-      .then(([stores, cats]) => {
-        if (!alive) return;
-        if (stores.data.length === 0) {
-          setNoStore(true);
-          return;
-        }
-        setCategories(cats.data);
+    categoryService
+      .index({ page: 1, per_page: 100, status: "active" })
+      .then((res) => {
+        if (alive) setCategories(res.data);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -64,18 +55,6 @@ export function Component() {
 
   if (loading) {
     return <ProductFormSkeleton />;
-  }
-
-  if (noStore) {
-    return (
-      <div className="p-8 text-center">
-        <Store className="size-10 mx-auto text-muted-foreground" />
-        <p className="mt-3 font-semibold">{t("products.noStoreTitle")}</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("products.noStoreSub")}
-        </p>
-      </div>
-    );
   }
 
   const submit = async (e: React.FormEvent) => {

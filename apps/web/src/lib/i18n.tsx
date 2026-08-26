@@ -177,9 +177,6 @@ const dict = {
     "products.storeLabel": "Tienda",
     "products.createdLabel": "Creado",
     "products.mediaLabel": "Imágenes",
-    "products.noStoreTitle": "Sin tienda",
-    "products.noStoreSub":
-      "Crea tu tienda para poder publicar productos.",
     "catalogs.title": "Mis catálogos",
     "catalogs.new": "Nuevo catálogo",
     "catalogs.edit": "Editar catálogo",
@@ -528,8 +525,6 @@ const dict = {
     "products.storeLabel": "Store",
     "products.createdLabel": "Created",
     "products.mediaLabel": "Images",
-    "products.noStoreTitle": "No store",
-    "products.noStoreSub": "Create your store before publishing products.",
     "catalogs.title": "My catalogs",
     "catalogs.new": "New catalog",
     "catalogs.edit": "Edit catalog",
