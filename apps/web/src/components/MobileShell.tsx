@@ -56,7 +56,6 @@ function useNavItems() {
     desktopOnly?: boolean;
   }> = [
     { to: "/dashboard", icon: Home, label: t("nav.home") },
-    { to: "/market", icon: Store, label: t("nav.market") },
     { to: "/publish", icon: PlusCircle, label: t("nav.publish"), accent: true },
     { to: "/shops", icon: MapPin, label: t("nav.shops") },
     { to: "/categories", icon: Tags, label: t("nav.categories"), desktopOnly: true },
@@ -64,7 +63,6 @@ function useNavItems() {
     { to: "/users", icon: Users, label: t("nav.users"), desktopOnly: true },
     { to: "/roles", icon: ShieldCheck, label: t("nav.roles"), desktopOnly: true },
     { to: "/profile", icon: User, label: t("nav.profile") },
-    { to: "/apps", icon: User, label: "apps", desktopOnly: true },
   ];
   return items;
 }

@@ -38,7 +38,6 @@ const router = createBrowserRouter([
         lazy: () => import("./pages/app/layout"),
         children: [
           { path: "dashboard", lazy: () => import("./pages/app/dashboard") },
-          { path: "market", lazy: () => import("./pages/app/market") },
           { path: "publish", lazy: () => import("./pages/app/publish") },
           { path: "shops", lazy: () => import("./pages/app/shops") },
           { path: "profile", lazy: () => import("./pages/app/profile") },
@@ -102,7 +101,6 @@ const router = createBrowserRouter([
             path: "roles/:uuid/edit",
             lazy: () => import("./pages/app/roles/edit"),
           },
-          { path: "apps", lazy: () => import("./pages/app/apps") },
           { path: "stores", lazy: () => import("./pages/app/stores") },
           { path: "whatsapp", lazy: () => import("./pages/app/whatsapp") },
           { path: "payments", lazy: () => import("./pages/app/payments") },
