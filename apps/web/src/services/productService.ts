@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { Paginated, RawPaginated } from "@/types/pagination";
-import type { Product, ProductData } from "@/types/models";
+import type { Media, Product, ProductData } from "@/types/models";
 import type { ListParams } from "./storeService";
 
 export interface ProductListParams extends ListParams {
@@ -20,7 +20,7 @@ function buildQuery(params?: object): string {
 }
 
 export const productService = {
-  // GET /products -> { data, links, meta } (solo activas, ?store_uuid)
+  // GET /products -> { data, links, meta } (?status=active|inactive|all, ?store_uuid)
   index: (params?: ProductListParams) =>
     api.get<Paginated<Product>>(`/products${buildQuery(params)}`),
   // GET /stores/{storeUuid}/products -> { products: RawPaginated<Product> } (paginator crudo, legacy)
@@ -28,9 +28,9 @@ export const productService = {
     api.get<{ products: RawPaginated<Product> }>(
       `/stores/${storeUuid}/products${buildQuery(params)}`,
     ),
-  // GET /products/{uuid} -> { data: Product }
+  // GET /products/{uuid} -> { data: Product } (store + media embebidos)
   show: (uuid: string) => api.get<{ data: Product }>(`/products/${uuid}`),
-  // POST /products -> { data: Product } 201
+  // POST /products -> { data: Product } 201 (store_id opcional → asigna el único store)
   create: (data: ProductData) =>
     api.post<{ data: Product }>("/products", data),
   // PUT /products/{uuid} -> { data: Product }
@@ -39,4 +39,15 @@ export const productService = {
   deactivate: (uuid: string) => api.post(`/products/${uuid}/deactivate`),
   activate: (uuid: string) => api.post(`/products/${uuid}/activate`),
   destroy: (uuid: string) => api.delete(`/products/${uuid}`),
+  // POST /products/{uuid}/media (multipart images[]) -> { media } 201 (403 si excede media_per_product)
+  uploadImages: (uuid: string, files: File[]) => {
+    const fd = new FormData();
+    files.forEach((file) => fd.append("images[]", file));
+    return api.post<{ media: Media[] }>(`/products/${uuid}/media`, fd);
+  },
+  // DELETE /products/{uuid}/media/{mediaUuid} -> { message }
+  removeImage: (uuid: string, mediaUuid: string) =>
+    api.delete<{ message: string }>(
+      `/products/${uuid}/media/${mediaUuid}`,
+    ),
 };

@@ -56,6 +56,10 @@ export interface Product {
   category_id: number | null;
   status: number;
   store?: StoreRef | null;
+  category?: Pick<
+    Category,
+    "id" | "uuid" | "name" | "icon" | "status"
+  > | null;
   media?: Media[];
   created_at: string;
   updated_at: string;

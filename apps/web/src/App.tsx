@@ -54,7 +54,22 @@ const router = createBrowserRouter([
             path: "categories/:uuid/edit",
             lazy: () => import("./pages/app/categories/edit"),
           },
-          { path: "products", lazy: () => import("./pages/app/products") },
+          {
+            path: "products",
+            lazy: () => import("./pages/app/products/index"),
+          },
+          {
+            path: "products/new",
+            lazy: () => import("./pages/app/products/create"),
+          },
+          {
+            path: "products/:uuid",
+            lazy: () => import("./pages/app/products/detail"),
+          },
+          {
+            path: "products/:uuid/edit",
+            lazy: () => import("./pages/app/products/edit"),
+          },
           {
             path: "users",
             lazy: () => import("./pages/app/users/index"),
