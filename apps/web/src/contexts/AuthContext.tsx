@@ -18,6 +18,7 @@ interface AuthContextType {
   login: (data: LoginDto) => Promise<void>;
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -116,9 +117,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     toast.success(t("auth.logoutSuccess"));
   }, [t]);
 
+  const updateUser = useCallback((next: User) => {
+    setUser(next);
+    persistUser(next);
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout }}
+      value={{ user, token, loading, login, register, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

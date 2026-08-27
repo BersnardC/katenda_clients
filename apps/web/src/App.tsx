@@ -40,7 +40,16 @@ const router = createBrowserRouter([
           { path: "dashboard", lazy: () => import("./pages/app/dashboard") },
           { path: "publish", lazy: () => import("./pages/app/publish") },
           { path: "shops", lazy: () => import("./pages/app/shops") },
-          { path: "profile", lazy: () => import("./pages/app/profile") },
+          { path: "profile", lazy: () => import("./pages/app/profile/index") },
+          {
+            path: "profile/account",
+            lazy: () => import("./pages/app/profile/account"),
+          },
+          {
+            path: "profile/edit",
+            lazy: () => import("./pages/app/profile/edit"),
+          },
+          { path: "plans", lazy: () => import("./pages/app/plans") },
           {
             path: "categories",
             lazy: () => import("./pages/app/categories/index"),
