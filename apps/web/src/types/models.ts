@@ -186,7 +186,7 @@ export interface Plan {
   id: number;
   name: string;
   slug: string;
-  price: string;
+  price: number | string;
   interval: string;
   status: number;
   limits?: PlanLimit[];

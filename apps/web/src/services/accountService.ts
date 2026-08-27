@@ -12,4 +12,9 @@ export const accountService = {
     api.get<{ subscription: Subscription }>("/account/subscription"),
   // GET /plans -> { plans }
   plans: () => api.get<{ plans: Plan[] }>("/plans"),
+  // POST /account/subscription { plan_id } -> { subscription }
+  changePlan: (planId: number) =>
+    api.post<{ subscription: Subscription }>("/account/subscription", {
+      plan_id: planId,
+    }),
 };
