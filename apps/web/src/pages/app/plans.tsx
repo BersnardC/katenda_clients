@@ -213,7 +213,7 @@ export function Component() {
                   onClick={() => setToConfirm(plan)}
                   className={`mt-5 w-full py-3 rounded-2xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                     featured
-                      ? "bg-white text-foreground"
+                      ? "bg-white text-foreground dark:text-zinc-900"
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
