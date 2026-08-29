@@ -56,7 +56,7 @@ function useNavItems() {
     desktopOnly?: boolean;
   }> = [
     { to: "/dashboard", icon: Home, label: t("nav.home") },
-    { to: "/publish", icon: PlusCircle, label: t("nav.publish"), accent: true },
+    { to: "/products/new", icon: PlusCircle, label: t("nav.publish"), accent: true },
     { to: "/shops", icon: MapPin, label: t("nav.shops") },
     { to: "/stores", icon: Building2, label: t("nav.mystore"), desktopOnly: true },
     { to: "/categories", icon: Tags, label: t("nav.categories"), desktopOnly: true },

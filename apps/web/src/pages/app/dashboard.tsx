@@ -67,7 +67,7 @@ export function Component() {
           {t("home.quick")}
         </h2>
         <div className="grid grid-cols-4 gap-3">
-          <Quick to="/publish" icon={<Plus />} label={t("nav.publish")} />
+          <Quick to="/products/new" icon={<Plus />} label={t("nav.publish")} />
           <Quick
             to="/products"
             icon={<Package />}
