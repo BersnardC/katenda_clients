@@ -8,6 +8,7 @@ import {
   Boxes,
   Users,
   ShieldCheck,
+  Building2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -57,6 +58,7 @@ function useNavItems() {
     { to: "/dashboard", icon: Home, label: t("nav.home") },
     { to: "/publish", icon: PlusCircle, label: t("nav.publish"), accent: true },
     { to: "/shops", icon: MapPin, label: t("nav.shops") },
+    { to: "/stores", icon: Building2, label: t("nav.mystore"), desktopOnly: true },
     { to: "/categories", icon: Tags, label: t("nav.categories"), desktopOnly: true },
     { to: "/products", icon: Boxes, label: t("nav.inventory"), desktopOnly: true },
     { to: "/users", icon: Users, label: t("nav.users"), desktopOnly: true },

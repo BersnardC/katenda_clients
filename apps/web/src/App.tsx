@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { Providers } from "@/components/providers";
+import { RequireAuth } from "@/components/RequireAuth";
 
 function RootLayout() {
   return (
@@ -110,10 +111,21 @@ const router = createBrowserRouter([
             path: "roles/:uuid/edit",
             lazy: () => import("./pages/app/roles/edit"),
           },
-          { path: "stores", lazy: () => import("./pages/app/stores") },
+          { path: "stores", lazy: () => import("./pages/app/stores/mystore") },
           { path: "whatsapp", lazy: () => import("./pages/app/whatsapp") },
           { path: "payments", lazy: () => import("./pages/app/payments") },
           { path: "admin", lazy: () => import("./pages/app/admin") },
+        ],
+      },
+      {
+        path: "stores/preview",
+        element: (
+          <RequireAuth>
+            <Outlet />
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, lazy: () => import("./pages/app/stores/preview") },
         ],
       },
       {

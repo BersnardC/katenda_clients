@@ -76,7 +76,7 @@ export function Component() {
           <Quick
             to="/stores"
             icon={<StoreIcon />}
-            label={t("catalogs.title")}
+            label={t("nav.mystore")}
           />
           <Quick
             to="/whatsapp"

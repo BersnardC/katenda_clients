@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { Paginated } from "@/types/pagination";
-import type { Store, StoreData } from "@/types/models";
+import type { Media, Store, StoreData } from "@/types/models";
 
 export interface ListParams {
   page?: number;
@@ -26,6 +26,24 @@ export const storeService = {
   activate: (uuid: string) => api.post(`/stores/${uuid}/activate`),
   // DELETE /stores/{uuid} -> 204
   destroy: (uuid: string) => api.delete(`/stores/${uuid}`),
+  // POST /stores/{uuid}/logo (multipart images[]) -> { media, store } 201 (reemplaza)
+  uploadLogo: (uuid: string, file: File) => {
+    const fd = new FormData();
+    fd.append("images[]", file);
+    return api.post<{ media: Media[]; store: Store }>(`/stores/${uuid}/logo`, fd);
+  },
+  // DELETE /stores/{uuid}/logo -> { store }
+  removeLogo: (uuid: string) =>
+    api.delete<{ store: Store }>(`/stores/${uuid}/logo`),
+  // POST /stores/{uuid}/banner (multipart images[]) -> { media, store } 201 (reemplaza)
+  uploadBanner: (uuid: string, file: File) => {
+    const fd = new FormData();
+    fd.append("images[]", file);
+    return api.post<{ media: Media[]; store: Store }>(`/stores/${uuid}/banner`, fd);
+  },
+  // DELETE /stores/{uuid}/banner -> { store }
+  removeBanner: (uuid: string) =>
+    api.delete<{ store: Store }>(`/stores/${uuid}/banner`),
 };
 
 function buildQuery(params?: object): string {
