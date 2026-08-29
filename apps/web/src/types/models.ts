@@ -10,6 +10,28 @@ export interface Media {
   updated_at: string;
 }
 
+export interface Currency {
+  id: number;
+  uuid: string;
+  code: string;
+  name: string;
+  symbol: string | null;
+  decimal_places: number;
+  status: boolean;
+}
+
+export interface Country {
+  id: number;
+  uuid: string;
+  name: string;
+  iso2: string;
+  flag: string | null;
+  calling_code: string | null;
+  currency_id: number | null;
+  status: boolean;
+  currency?: Currency | null;
+}
+
 export interface Store {
   id: number;
   uuid: string;
@@ -18,9 +40,14 @@ export interface Store {
   slug: string;
   description: string | null;
   domain: string | null;
+  currency_id: number | null;
+  currency_secondary_id: number | null;
+  accent_color: string | null;
   logo_url: string | null;
   banner_url: string | null;
   status: number;
+  currency?: Currency | null;
+  currency_secondary?: Currency | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +57,9 @@ export interface StoreData {
   slug: string;
   description?: string;
   domain?: string;
+  currency_id?: number | null;
+  currency_secondary_id?: number | null;
+  accent_color?: string | null;
   logo_url?: string;
   banner_url?: string;
   status?: 0 | 1;
@@ -170,9 +200,31 @@ export interface Account {
   city: string | null;
   state: string | null;
   country: string | null;
+  verified: boolean;
+  country_info?: Country | null;
   status: number;
   created_at: string;
   updated_at: string;
+}
+
+// Datos públicos de empresa expuestos por GET /s/{slug} -> { store, account }
+export interface StorefrontAccount {
+  name: string;
+  legal_name: string | null;
+  rif: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  verified: boolean;
+  country_info: Country | null;
+}
+
+export interface Storefront {
+  store: Store;
+  account: StorefrontAccount | null;
 }
 
 export interface PlanLimit {

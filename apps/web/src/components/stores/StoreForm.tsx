@@ -1,10 +1,20 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { BadgeCheck, Check, ImagePlus, Trash2 } from "lucide-react";
 import { Switch } from "@katenda_clients/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@katenda_clients/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { compressImage } from "@/lib/image";
 import { slugify } from "@/lib/utils";
-import { STORE_URL_PREFIX, ACCENT_FALLBACK } from "@/lib/store";
+import { normalizeHex } from "@/lib/color";
+import { ACCENT_FALLBACK, ACCENT_PRESETS, STORE_URL_PREFIX } from "@/lib/store";
+import { SearchSelect } from "@/components/SearchSelect";
+import type { Country, Currency } from "@/types/models";
 
 export type StoreFormValue = {
   name: string;
@@ -12,15 +22,29 @@ export type StoreFormValue = {
   description: string;
   logo: string | null;
   banner: string | null;
+  accentColor: string | null;
   active: boolean;
+  address: string;
+  rif: string;
+  phoneCode: string;
+  phoneNumber: string;
+  countryIso2: string | null;
+  currencyId: number | null;
+  currencySecondaryId: number | null;
 };
 
 export function StoreForm({
   value,
   onChange,
+  countries,
+  currencies,
+  accountVerified,
 }: {
   value: StoreFormValue;
   onChange: (v: StoreFormValue) => void;
+  countries: Country[];
+  currencies: Currency[];
+  accountVerified: boolean;
 }) {
   const { t } = useI18n();
   const [slugTouched, setSlugTouched] = useState(!!value.slug);
@@ -32,66 +56,33 @@ export function StoreForm({
     set({ name, ...(slugTouched ? {} : { slug: slugify(name) }) });
   };
 
+  const accent = value.accentColor ?? ACCENT_FALLBACK;
+
+  const callingCodes = Array.from(
+    new Set(
+      countries
+        .map((c) => c.calling_code)
+        .filter((c): c is string => !!c),
+    ),
+  ).sort();
+
+  const countryOptions = countries.map((c) => ({
+    value: c.iso2,
+    label: c.name,
+    icon: <span className="text-base leading-none">{c.flag}</span>,
+  }));
+
+  const currencyOptions = currencies.map((c) => ({
+    value: String(c.id),
+    label: `${c.code} — ${c.name}`,
+    icon: <span className="text-sm font-semibold tabular-nums">{c.symbol}</span>,
+  }));
+
   const inputCls =
     "w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm";
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.media")}</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ImageDrop
-            label={t("stores.logo")}
-            value={value.logo}
-            onChange={(logo) => set({ logo })}
-            className="h-32"
-            round
-          />
-          <ImageDrop
-            label={t("stores.banner")}
-            value={value.banner}
-            onChange={(banner) => set({ banner })}
-            className="h-32"
-          />
-        </div>
-        <div className="mt-2 rounded-2xl overflow-hidden border border-border">
-          <div
-            className="h-24 bg-muted relative"
-            style={{ backgroundColor: ACCENT_FALLBACK + "22" }}
-          >
-            {value.banner && (
-              <img
-                src={value.banner}
-                alt="Vista previa del banner"
-                className="w-full h-full object-cover"
-              />
-            )}
-          </div>
-          <div className="p-4 flex items-center gap-3 bg-card">
-            <div
-              className="size-12 rounded-2xl grid place-items-center overflow-hidden font-display font-extrabold text-white -mt-8 border-4 border-card"
-              style={{ backgroundColor: ACCENT_FALLBACK }}
-            >
-              {value.logo ? (
-                <img
-                  src={value.logo}
-                  alt="Logo"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                value.name.charAt(0)
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{value.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {value.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div>
         <p className="text-sm font-medium mb-1.5">{t("stores.name")}</p>
         <input
@@ -129,6 +120,208 @@ export function StoreForm({
           onChange={(e) => set({ description: e.target.value })}
           className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
         />
+      </div>
+
+      <div>
+        <p className="text-sm font-medium mb-1.5">{t("stores.accent")}</p>
+        <p className="text-xs text-muted-foreground -mt-1 mb-3">
+          {t("stores.accentSub")}
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {ACCENT_PRESETS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => set({ accentColor: c })}
+              aria-label={`Color ${c}`}
+              className="size-10 rounded-full grid place-items-center border-2 transition"
+              style={{
+                backgroundColor: c,
+                borderColor:
+                  value.accentColor === c ? "var(--foreground)" : "transparent",
+              }}
+            >
+              {value.accentColor === c && <Check className="size-5 text-white" />}
+            </button>
+          ))}
+          <label className="size-10 rounded-full border border-dashed border-border grid place-items-center cursor-pointer overflow-hidden">
+            <input
+              type="color"
+              value={accent}
+              onChange={(e) =>
+                set({ accentColor: normalizeHex(e.target.value) ?? ACCENT_FALLBACK })
+              }
+              className="size-12 cursor-pointer opacity-0 absolute"
+              aria-label={t("stores.accentCustom")}
+            />
+            <span className="text-xs font-semibold text-muted-foreground">+</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium mb-1.5">{t("stores.media")}</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ImageDrop
+            label={t("stores.logo")}
+            value={value.logo}
+            onChange={(logo) => set({ logo })}
+            className="h-32"
+            round
+          />
+          <ImageDrop
+            label={t("stores.banner")}
+            value={value.banner}
+            onChange={(banner) => set({ banner })}
+            className="h-32"
+          />
+        </div>
+        <div className="mt-2 rounded-2xl overflow-hidden border border-border">
+          <div
+            className="h-24 bg-muted relative"
+            style={{ backgroundColor: accent + "22" }}
+          >
+            {value.banner && (
+              <img
+                src={value.banner}
+                alt="Vista previa del banner"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          <div className="p-4 flex items-center gap-3 bg-card">
+            <div
+              className="size-12 rounded-2xl grid place-items-center overflow-hidden font-display font-extrabold text-white -mt-8 border-4 border-card"
+              style={{ backgroundColor: accent }}
+            >
+              {value.logo ? (
+                <img
+                  src={value.logo}
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                value.name.charAt(0)
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{value.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {value.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium mb-1.5">{t("stores.companyData")}</p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium mb-1.5">{t("stores.address")}</p>
+            <textarea
+              rows={2}
+              value={value.address}
+              onChange={(e) => set({ address: e.target.value })}
+              maxLength={140}
+              className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
+            />
+          </div>
+          <div>
+            <p className="text-sm font-medium mb-1.5">{t("stores.rif")}</p>
+            <input
+              value={value.rif}
+              onChange={(e) => set({ rif: e.target.value })}
+              maxLength={30}
+              className={inputCls}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium mb-1.5">{t("stores.country")}</p>
+              <SearchSelect
+                value={value.countryIso2}
+                onChange={(iso2) => {
+                  set({ countryIso2: iso2 });
+                  const country = countries.find((c) => c.iso2 === iso2);
+                  if (country?.calling_code) {
+                    set({ phoneCode: country.calling_code });
+                  }
+                }}
+                options={countryOptions}
+                placeholder={t("stores.countryPlaceholder")}
+                searchPlaceholder={t("stores.search")}
+                emptyLabel={t("common.empty")}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1.5">{t("stores.phone")}</p>
+              <div className="flex items-center h-12 rounded-2xl bg-surface border border-border overflow-hidden">
+                <Select
+                  value={value.phoneCode}
+                  onValueChange={(v) => set({ phoneCode: v })}
+                >
+                  <SelectTrigger className="w-24 h-full rounded-none bg-surface border-0 border-r border-border">
+                    <SelectValue placeholder="+" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {callingCodes.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input
+                  value={value.phoneNumber}
+                  onChange={(e) => set({ phoneNumber: e.target.value })}
+                  placeholder="412 000 0000"
+                  maxLength={20}
+                  className="flex-1 h-full bg-transparent outline-none text-sm px-3 tabular-nums"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium mb-1.5">{t("stores.currency")}</p>
+        <div className="space-y-3">
+          <SearchSelect
+            value={value.currencyId ? String(value.currencyId) : null}
+            onChange={(v) => set({ currencyId: v ? Number(v) : null })}
+            options={currencyOptions}
+            placeholder={t("stores.currencyPlaceholder")}
+            searchPlaceholder={t("stores.search")}
+            emptyLabel={t("common.empty")}
+          />
+          <SearchSelect
+            value={value.currencySecondaryId ? String(value.currencySecondaryId) : null}
+            onChange={(v) => set({ currencySecondaryId: v ? Number(v) : null })}
+            options={currencyOptions}
+            placeholder={t("stores.currencySecondaryPlaceholder")}
+            searchPlaceholder={t("stores.search")}
+            emptyLabel={t("common.empty")}
+            allowClear
+            clearLabel={t("stores.currencyNone")}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-card border border-border">
+        <BadgeCheck
+          className="size-5"
+          style={{ color: accountVerified ? accent : undefined }}
+        />
+        <span className="flex-1 font-medium text-sm">{t("stores.verified")}</span>
+        <span
+          className={`text-xs font-semibold ${
+            accountVerified ? "text-success" : "text-muted-foreground"
+          }`}
+        >
+          {accountVerified ? t("stores.verifiedYes") : t("stores.verifiedNo")}
+        </span>
       </div>
 
       <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-card border border-border">

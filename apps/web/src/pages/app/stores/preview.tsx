@@ -1,20 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  FileText,
+  Globe,
+  MapPin,
+  Phone,
+  Search,
+  ShoppingBag,
+} from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useStores } from "@/hooks/useStores";
 import { DynamicIcon } from "@/components/IconPicker";
 import { api } from "@/lib/api";
 import { ACCENT_FALLBACK, STORE_URL_PREFIX } from "@/lib/store";
-import type { Category, Product, Store } from "@/types/models";
+import type { Category, Product, Storefront, StorefrontAccount } from "@/types/models";
 import type { RawPaginated } from "@/types/pagination";
+
+const fmtCurrency = (amount: number, code: string): string => {
+  try {
+    return new Intl.NumberFormat("es", {
+      style: "currency",
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${code} ${amount.toFixed(2)}`;
+  }
+};
 
 export function Component() {
   const { t } = useI18n();
   const { data, loading: storesLoading } = useStores();
   const slug = data?.data?.[0]?.slug;
 
-  const [store, setStore] = useState<Store | null>(null);
+  const [store, setStore] = useState<Storefront["store"] | null>(null);
+  const [account, setAccount] = useState<StorefrontAccount | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +49,7 @@ export function Component() {
     if (!slug) return;
     let alive = true;
     Promise.all([
-      api.get<{ store: Store }>(`/s/${slug}`),
+      api.get<Storefront>(`/s/${slug}`),
       api.get<{ products: RawPaginated<Product> }>(
         `/s/${slug}/products?per_page=50`,
       ),
@@ -35,6 +58,7 @@ export function Component() {
       .then(([s, p, c]) => {
         if (!alive) return;
         setStore(s.store);
+        setAccount(s.account);
         setProducts(p.products.data ?? []);
         setCategories(c.categories ?? []);
       })
@@ -48,6 +72,10 @@ export function Component() {
       alive = false;
     };
   }, [slug]);
+
+  const accent = store?.accent_color ?? ACCENT_FALLBACK;
+  const primaryCurrency = store?.currency?.code ?? "USD";
+  const secondaryCurrency = store?.currency_secondary;
 
   const activeCategories = categories.filter((c) => c.status === 1);
 
@@ -68,7 +96,10 @@ export function Component() {
       <div className="px-5 py-16 text-center">
         <ShoppingBag className="size-10 mx-auto mb-3 opacity-50" />
         <p className="font-semibold">{t("storefront.inactive")}</p>
-        <Link to="/stores" className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold">
+        <Link
+          to="/stores"
+          className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold"
+        >
           {t("storefront.edit")}
         </Link>
       </div>
@@ -80,7 +111,7 @@ export function Component() {
       <header className="relative">
         <div
           className="h-48 md:h-64 w-full overflow-hidden"
-          style={{ backgroundColor: ACCENT_FALLBACK + "26" }}
+          style={{ backgroundColor: accent + "26" }}
         >
           {store?.banner_url ? (
             <img
@@ -93,7 +124,7 @@ export function Component() {
             <div
               className="w-full h-full"
               style={{
-                background: `linear-gradient(135deg, ${ACCENT_FALLBACK}33, transparent 70%)`,
+                background: `linear-gradient(135deg, ${accent}33, transparent 70%)`,
               }}
             />
           )}
@@ -110,7 +141,7 @@ export function Component() {
         <div className="-mt-12 md:-mt-14 flex flex-col md:flex-row md:items-end gap-4">
           <div
             className="relative size-24 md:size-28 rounded-3xl grid place-items-center overflow-hidden border-4 border-background shadow-pop font-display font-extrabold text-3xl text-white shrink-0"
-            style={{ backgroundColor: ACCENT_FALLBACK }}
+            style={{ backgroundColor: accent }}
           >
             {store?.logo_url ? (
               <img
@@ -123,15 +154,53 @@ export function Component() {
             )}
           </div>
           <div className="flex-1 min-w-0 pb-1">
-            <h1 className="font-display font-extrabold text-3xl md:text-4xl tracking-tight">
-              {store?.name ?? ""}
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display font-extrabold text-3xl md:text-4xl tracking-tight">
+                {store?.name ?? ""}
+              </h1>
+              {account?.verified && (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: accent }}
+                  title={t("storefront.verifiedTitle")}
+                >
+                  <BadgeCheck className="size-4" /> {t("storefront.verified")}
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground">{store?.description}</p>
             <p className="mt-1 text-xs text-muted-foreground tabular-nums">
               {STORE_URL_PREFIX}
               {store?.slug}
             </p>
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          {account?.address && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="size-4" style={{ color: accent }} />
+              {account.address}
+            </span>
+          )}
+          {account?.rif && (
+            <span className="flex items-center gap-1.5">
+              <FileText className="size-4" style={{ color: accent }} />
+              {account.rif}
+            </span>
+          )}
+          {account?.country_info && (
+            <span className="flex items-center gap-1.5">
+              <Globe className="size-4" style={{ color: accent }} />
+              {account.country_info.flag} {account.country_info.name}
+            </span>
+          )}
+          {account?.phone && (
+            <span className="flex items-center gap-1.5">
+              <Phone className="size-4" style={{ color: accent }} />
+              {account.phone}
+            </span>
+          )}
         </div>
 
         <div className="sticky top-0 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-4 mt-6 bg-background/90 backdrop-blur border-b border-border">
@@ -147,14 +216,18 @@ export function Component() {
           </label>
 
           <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
-            <Chip active={cat === "all"} accent={ACCENT_FALLBACK} onClick={() => setCat("all")}>
+            <Chip
+              active={cat === "all"}
+              accent={accent}
+              onClick={() => setCat("all")}
+            >
               {t("storefront.all")}
             </Chip>
             {activeCategories.map((c) => (
               <Chip
                 key={c.id}
                 active={cat === c.name}
-                accent={ACCENT_FALLBACK}
+                accent={accent}
                 onClick={() => setCat(c.name)}
               >
                 <DynamicIcon name={c.icon} className="size-4" />
@@ -177,7 +250,10 @@ export function Component() {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-3xl bg-card border border-border overflow-hidden">
+                <div
+                  key={i}
+                  className="rounded-3xl bg-card border border-border overflow-hidden"
+                >
                   <div className="aspect-square bg-muted animate-pulse" />
                   <div className="p-3 space-y-2">
                     <div className="h-3 w-2/3 bg-muted rounded animate-pulse" />
@@ -189,7 +265,10 @@ export function Component() {
           ) : error ? (
             <div className="py-20 text-center text-muted-foreground">
               <p>{t("storefront.loadError")}</p>
-              <Link to="/stores" className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold">
+              <Link
+                to="/stores"
+                className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold"
+              >
                 {t("storefront.edit")}
               </Link>
             </div>
@@ -224,14 +303,23 @@ export function Component() {
                       <div>
                         <p
                           className="font-display font-bold text-lg"
-                          style={{ color: ACCENT_FALLBACK }}
+                          style={{ color: accent }}
                         >
-                          ${Number(p.price).toFixed(2)}
+                          {fmtCurrency(Number(p.price), primaryCurrency)}
                         </p>
+                        {secondaryCurrency && (
+                          <p className="text-xs text-muted-foreground tabular-nums">
+                            ≈{" "}
+                            {fmtCurrency(
+                              Number(p.price),
+                              secondaryCurrency.code,
+                            )}
+                          </p>
+                        )}
                       </div>
                       <button
                         className="size-9 grid place-items-center rounded-full text-white shrink-0"
-                        style={{ backgroundColor: ACCENT_FALLBACK }}
+                        style={{ backgroundColor: accent }}
                         aria-label={`Pedir ${p.name}`}
                       >
                         <ShoppingBag className="size-4" />
@@ -246,10 +334,8 @@ export function Component() {
 
         <footer className="py-10 border-t border-border text-sm text-muted-foreground">
           <p className="font-semibold text-foreground">{store?.name}</p>
-          <p className="tabular-nums">
-            {STORE_URL_PREFIX}
-            {store?.slug}
-          </p>
+          {account?.address && <p>{account.address}</p>}
+          {account?.rif && <p>{account.rif}</p>}
         </footer>
       </div>
     </div>

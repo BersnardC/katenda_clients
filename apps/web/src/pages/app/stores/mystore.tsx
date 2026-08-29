@@ -1,39 +1,86 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { useStores } from "@/hooks/useStores";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
+import { countryService } from "@/services/countryService";
+import { currencyService } from "@/services/currencyService";
+import { accountService } from "@/services/accountService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
-import type { Store } from "@/types/models";
+import type { Account, Country, Currency, Store } from "@/types/models";
 
-const storeToForm = (s: Store): StoreFormValue => ({
-  name: s.name,
-  slug: s.slug,
-  description: s.description ?? "",
-  logo: s.logo_url,
-  banner: s.banner_url,
-  active: s.status === 1,
-});
+const parsePhone = (phone: string | null) => {
+  if (!phone) return { code: "", number: "" };
+  const m = phone.trim().match(/^(\+\d+)\s*(.*)$/);
+  if (m) return { code: m[1], number: m[2] };
+  return { code: "", number: phone.trim() };
+};
+
+const storeToForm = (s: Store, account: Account | null): StoreFormValue => {
+  const phone = parsePhone(account?.phone ?? null);
+  return {
+    name: s.name,
+    slug: s.slug,
+    description: s.description ?? "",
+    logo: s.logo_url,
+    banner: s.banner_url,
+    accentColor: s.accent_color,
+    active: s.status === 1,
+    address: account?.address ?? "",
+    rif: account?.rif ?? "",
+    phoneCode: phone.code,
+    phoneNumber: phone.number,
+    countryIso2: account?.country ?? null,
+    currencyId: s.currency_id,
+    currencySecondaryId: s.currency_secondary_id,
+  };
+};
 
 const errMsg = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
 
 export function Component() {
   const { t } = useI18n();
-  const { data, loading, refetch } = useStores();
-  const store = data?.data?.[0] ?? null;
+  const [store, setStore] = useState<Store | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [form, setForm] = useState<StoreFormValue | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const formValue = form ?? (store ? storeToForm(store) : null);
+  const load = () => {
+    Promise.all([
+      storeService.list(),
+      countryService.list(),
+      currencyService.list(),
+      accountService.show(),
+    ])
+      .then(([s, c, cu, ac]) => {
+        const st = s.data?.[0] ?? null;
+        const acc = ac.account ?? null;
+        setStore(st);
+        setAccount(acc);
+        setCountries(c.countries ?? []);
+        setCurrencies(cu.currencies ?? []);
+        if (st) setForm(storeToForm(st, acc));
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const formValue = form ?? (store ? storeToForm(store, account) : null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!store || !formValue) return;
+    if (!store || !formValue || !account) return;
     if (!formValue.name.trim()) {
       toast.error(t("stores.nameRequired"));
       return;
@@ -44,7 +91,19 @@ export function Component() {
         name: formValue.name.trim(),
         slug: formValue.slug || slugify(formValue.name),
         description: formValue.description || undefined,
+        currency_id: formValue.currencyId,
+        currency_secondary_id: formValue.currencySecondaryId,
+        accent_color: formValue.accentColor,
         status: formValue.active ? 1 : 0,
+      });
+      const phone =
+        [formValue.phoneCode, formValue.phoneNumber].filter(Boolean).join(" ") ||
+        undefined;
+      await accountService.update({
+        address: formValue.address.trim() || undefined,
+        rif: formValue.rif.trim() || undefined,
+        country: formValue.countryIso2 || undefined,
+        phone,
       });
       if (formValue.logo && formValue.logo.startsWith("data:")) {
         const file = await dataUrlToFile(formValue.logo, "logo.jpg");
@@ -59,7 +118,7 @@ export function Component() {
         await storeService.removeBanner(store.uuid);
       }
       toast.success(t("stores.updated"));
-      refetch();
+      load();
     } catch (err) {
       toast.error(errMsg(err, t("stores.updateError")));
     } finally {
@@ -100,12 +159,15 @@ export function Component() {
       <div className="px-5 mt-2 space-y-4 pb-4">
         {loading ? (
           <SkeletonForm />
-        ) : store ? (
+        ) : store && account && formValue ? (
           <form onSubmit={submit} className="space-y-4">
             <StoreForm
               key={store.uuid}
-              value={formValue as StoreFormValue}
+              value={formValue}
               onChange={setForm}
+              countries={countries}
+              currencies={currencies}
+              accountVerified={account.verified}
             />
             <button
               type="submit"
@@ -117,7 +179,7 @@ export function Component() {
             </button>
           </form>
         ) : (
-          <CreateStoreFallback onCreated={refetch} />
+          <CreateStoreFallback onCreated={load} />
         )}
       </div>
     </>
