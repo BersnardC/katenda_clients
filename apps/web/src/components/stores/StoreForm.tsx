@@ -1,19 +1,13 @@
 import { useRef, useState } from "react";
 import { BadgeCheck, Check, ImagePlus, Trash2 } from "lucide-react";
 import { Switch } from "@katenda_clients/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@katenda_clients/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { compressImage } from "@/lib/image";
 import { slugify } from "@/lib/utils";
 import { normalizeHex } from "@/lib/color";
 import { ACCENT_FALLBACK, ACCENT_PRESETS, STORE_URL_PREFIX } from "@/lib/store";
 import { SearchSelect } from "@/components/SearchSelect";
+import { PhoneField } from "@/components/PhoneField";
 import type { Country, Currency } from "@/types/models";
 
 export type StoreFormValue = {
@@ -254,33 +248,14 @@ export function StoreForm({
                 emptyLabel={t("common.empty")}
               />
             </div>
-            <div>
-              <p className="text-sm font-medium mb-1.5">{t("stores.phone")}</p>
-              <div className="flex items-center h-12 rounded-2xl bg-surface border border-border overflow-hidden">
-                <Select
-                  value={value.phoneCode}
-                  onValueChange={(v) => set({ phoneCode: v })}
-                >
-                  <SelectTrigger className="w-24 h-full rounded-none bg-surface border-0 border-r border-border">
-                    <SelectValue placeholder="+" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {callingCodes.map((code) => (
-                      <SelectItem key={code} value={code}>
-                        {code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  value={value.phoneNumber}
-                  onChange={(e) => set({ phoneNumber: e.target.value })}
-                  placeholder="412 000 0000"
-                  maxLength={20}
-                  className="flex-1 h-full bg-transparent outline-none text-sm px-3 tabular-nums"
-                />
-              </div>
-            </div>
+            <PhoneField
+              code={value.phoneCode}
+              number={value.phoneNumber}
+              onChange={(phoneCode, phoneNumber) => set({ phoneCode, phoneNumber })}
+              callingCodes={callingCodes}
+              label={t("stores.phone")}
+              numberPlaceholder="412 000 0000"
+            />
           </div>
         </div>
       </div>

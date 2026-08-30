@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { Paginated } from "@/types/pagination";
-import type { Media, Store, StoreData } from "@/types/models";
+import type { Media, Store, StoreData, StoreSettings } from "@/types/models";
 
 export interface ListParams {
   page?: number;
@@ -21,6 +21,9 @@ export const storeService = {
   // PUT /stores/{uuid} -> { data: Store }
   update: (uuid: string, data: Partial<StoreData>) =>
     api.put<{ data: Store }>(`/stores/${uuid}`, data),
+  // PUT /stores/{uuid}/whatsapp -> { data: Store } (settings + phone atómico)
+  updateWhatsapp: (uuid: string, data: { settings?: StoreSettings; phone?: string }) =>
+    api.put<{ data: Store }>(`/stores/${uuid}/whatsapp`, data),
   // POST /stores/{uuid}/deactivate|activate -> { message }
   deactivate: (uuid: string) => api.post(`/stores/${uuid}/deactivate`),
   activate: (uuid: string) => api.post(`/stores/${uuid}/activate`),

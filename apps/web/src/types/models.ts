@@ -10,6 +10,42 @@ export interface Media {
   updated_at: string;
 }
 
+// Configuración de WhatsApp de la tienda (columna `store.settings`)
+export interface WhatsappSettings {
+  template: string;
+  include_photo: boolean;
+  include_total: boolean;
+  include_note: boolean;
+  note: string;
+}
+
+export interface StoreSettings {
+  whatsapp?: WhatsappSettings;
+}
+
+// Contacto polimórfico (telefono, whatsapp, email) de la tienda/producto/categoría
+export interface Contact {
+  id: number;
+  uuid: string;
+  contactable_type: string;
+  contactable_id: number;
+  type: string;
+  value: string;
+  label: string | null;
+  is_primary: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactData {
+  type: string;
+  value: string;
+  label?: string;
+  is_primary?: boolean;
+  position?: number;
+}
+
 export interface Currency {
   id: number;
   uuid: string;
@@ -43,6 +79,7 @@ export interface Store {
   currency_id: number | null;
   currency_secondary_id: number | null;
   accent_color: string | null;
+  settings?: StoreSettings | null;
   logo_url: string | null;
   banner_url: string | null;
   status: number;
@@ -60,6 +97,7 @@ export interface StoreData {
   currency_id?: number | null;
   currency_secondary_id?: number | null;
   accent_color?: string | null;
+  settings?: StoreSettings;
   logo_url?: string;
   banner_url?: string;
   status?: 0 | 1;
