@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Katenda — Storefront público
 
-## Getting Started
+SPA SSR (Next.js 16 + App Router) para las tiendas públicas de Katenda. Cada
+tienda vive en su subdominio: `{slug}.katenda.com` → consume la API pública
+`/s/{slug}`, `/s/{slug}/products`, `/s/{slug}/categories` y
+`/s/{slug}/products/{uuid}`.
 
-First, run the development server:
+## Rutas
+
+| URL | Ruta Next | Qué muestra |
+|---|---|---|
+| `{slug}.katenda.com` | `app/s/[slug]/page.tsx` | Tienda (port fiel de `tienda.tsx`): banner/logo/acento, categorías, grid, carrito → WhatsApp |
+| `{slug}.katenda.com/p/{uuid}` | `app/s/[slug]/p/[productUuid]/page.tsx` | Producto (galería, cantidad, pedir por WhatsApp, relacionados) |
+
+El `middleware.ts` extrae el subdominio y reescribe internamente a `/s/{slug}`.
+En localhost se usa `?slug=mi-tienda` en la raíz.
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm --filter storefront dev          # http://localhost:3000/?slug=mi-tienda
+pnpm --filter storefront build
+pnpm --filter storefront start        # producción (output standalone)
+pnpm --filter storefront lint
+pnpm --filter storefront check-types
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Env
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env.local` → `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` (dev) /
+`https://api.katenda.com` (prod).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notas
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **SSR + ISR**: los datos se cargan en el servidor con `revalidate` (60s);
+  `generateMetadata` provee OG por tienda/producto. Carrito, buscador y filtro
+  de categorías son client-side.
+- **Imágenes**: `<img>` normal (la API ya entrega URLs optimizadas), sin
+  `next/image`.
+- **Auth de cliente**: pendiente (la API de clientes aún no existe) → sin
+  login/registro. El carrito persiste en `localStorage` (`katenda.cart`).
+- **i18n es/en** (`katenda.lang`) y **dark mode** (`katenda.theme`), mismo
+  patrón que `apps/web`.
