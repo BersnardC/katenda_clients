@@ -9,11 +9,13 @@ tienda vive en su subdominio: `{slug}.katenda.com` → consume la API pública
 
 | URL | Ruta Next | Qué muestra |
 |---|---|---|
-| `{slug}.katenda.com` | `app/s/[slug]/page.tsx` | Tienda (port fiel de `tienda.tsx`): banner/logo/acento, categorías, grid, carrito → WhatsApp |
-| `{slug}.katenda.com/p/{uuid}` | `app/s/[slug]/p/[productUuid]/page.tsx` | Producto (galería, cantidad, pedir por WhatsApp, relacionados) |
+| `{slug}.katenda.com` | `app/page.tsx` | Tienda (port fiel de `tienda.tsx`): banner/logo/acento, categorías, grid, carrito → WhatsApp |
+| `{slug}.katenda.com/p/{uuid}` | `app/p/[productUuid]/page.tsx` | Producto (galería, cantidad, pedir por WhatsApp, relacionados) |
 
-El `middleware.ts` extrae el subdominio y reescribe internamente a `/s/{slug}`.
-En localhost se usa `?slug=mi-tienda` en la raíz.
+El `proxy.ts` (middleware) lee el subdominio y lo pasa a las páginas vía header
+`x-katenda-slug` (primer acceso/crawlers) + cookie `katenda.slug` (navegación
+SPA con `<Link>`). No hay reescrituras de ruta. En localhost se usa
+`?slug=mi-tienda` en la raíz.
 
 ## Comandos
 
@@ -39,5 +41,8 @@ pnpm --filter storefront check-types
   `next/image`.
 - **Auth de cliente**: pendiente (la API de clientes aún no existe) → sin
   login/registro. El carrito persiste en `localStorage` (`katenda.cart`).
-- **i18n es/en** (`katenda.lang`) y **dark mode** (`katenda.theme`), mismo
-  patrón que `apps/web`.
+- **i18n es/en** (`katenda.lang`) y **dark mode** (`katenda.theme`, default
+  light), mismo patrón que `apps/web`.
+- **`node-linker=hoisted`** en el `.npmrc` raíz del workspace: requisito para
+  que `build:standalone` produzca un `dist-standalone/` portable (sin junctions
+  al workspace). No revertir.

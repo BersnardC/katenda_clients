@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 
 export function NotFound() {
@@ -9,12 +10,12 @@ export function NotFound() {
       <div>
         <p className="text-muted-foreground mb-2">{t("notFound.title")}</p>
         <p className="text-sm text-muted-foreground mb-6">{t("notFound.sub")}</p>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center px-5 h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold shadow-pop"
         >
           {t("notFound.home")}
-        </a>
+        </Link>
       </div>
     </main>
   );

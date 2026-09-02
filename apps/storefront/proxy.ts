@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 // Subdominios que no son tiendas (apps propias de Katenda).
 const EXCLUDED_SUBDOMAINS = new Set(["www", "api", "app", "admin"]);
 
-function resolveSlug(hostname: string): string | null {
+// Header/cookie usados para pasar el slug a las páginas (SSR y navegación SPA).
+const SLUG_HEADER = "x-katenda-slug";
+const SLUG_COOKIE = "katenda.slug";
+
+function resolveSlugFromHost(hostname: string): string | null {
   const dotIndex = hostname.indexOf(".");
   if (dotIndex === -1) return null; // dominio sin subdominio (ej. katenda.com)
   const subdomain = hostname.slice(0, dotIndex);
@@ -15,33 +19,28 @@ export function proxy(request: NextRequest) {
   const hostname = (request.headers.get("host") ?? "")
     .split(":")[0]
     .toLowerCase();
-  const { pathname, searchParams } = request.nextUrl;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
 
-  // Las rutas internas de la app (/s/...) nunca se reescriben de nuevo.
-  if (pathname.startsWith("/s/")) return NextResponse.next();
+  // Dev: slug vía query param ?slug= (no hay subdominio real en localhost).
+  // Prod: slug del subdominio {slug}.katenda.com.
+  const slug = isLocalhost
+    ? request.nextUrl.searchParams.get("slug")
+    : resolveSlugFromHost(hostname);
 
-  const isLocalhost =
-    hostname === "localhost" || hostname === "127.0.0.1";
-
-  // Dev: sin subdominio real → slug vía query param ?slug=
-  if (isLocalhost) {
-    const slug = searchParams.get("slug");
-    if (slug && pathname === "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = `/s/${encodeURIComponent(slug)}`;
-      url.searchParams.delete("slug");
-      return NextResponse.rewrite(url);
-    }
-    return NextResponse.next();
-  }
-
-  // Prod: {slug}.katenda.com/p/... → /s/{slug}/p/...
-  const slug = resolveSlug(hostname);
   if (!slug) return NextResponse.next();
 
-  const url = request.nextUrl.clone();
-  url.pathname = `/s/${encodeURIComponent(slug)}${pathname}`;
-  return NextResponse.rewrite(url);
+  // Header: lo lee la página en el primer acceso (visitas directas/crawlers).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(SLUG_HEADER, slug);
+
+  // Cookie: la llevan las peticiones de navegación SPA del cliente (<Link>).
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.cookies.set(SLUG_COOKIE, slug, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365, // 1 año
+  });
+  return response;
 }
 
 export const config = {

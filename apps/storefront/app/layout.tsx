@@ -13,7 +13,7 @@ export const viewport: Viewport = {
   themeColor: "#12B886",
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("katenda.theme");if(!t)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{if(localStorage.getItem("katenda.theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

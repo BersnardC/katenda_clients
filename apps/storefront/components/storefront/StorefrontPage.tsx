@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   BadgeCheck,
   FileText,
@@ -287,7 +288,7 @@ export function StorefrontPage({
                     key={p.uuid}
                     className="rounded-3xl bg-card border border-border overflow-hidden shadow-soft flex flex-col"
                   >
-                    <a
+                    <Link
                       href={`/p/${p.uuid}`}
                       className="flex flex-col flex-1"
                       aria-label={`Ver ${p.name}`}
@@ -314,7 +315,7 @@ export function StorefrontPage({
                           {p.name}
                         </h3>
                       </div>
-                    </a>
+                    </Link>
                     <div className="px-3 md:px-4 pb-3 md:pb-4 flex items-center justify-between gap-2">
                       <div>
                         <p

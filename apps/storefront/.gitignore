@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# standalone empaquetado (deploy)
+/dist-standalone/
+
 # production
 /build
 

@@ -129,6 +129,7 @@ Solo vía hooks de `hooks/useAccount.ts`: `usePlanLimit(feature)`, `useSubscript
 | Tema | Archivo |
 |---|---|
 | Patrón de módulo (este doc) | `katenda_clients/AGENTS.md` |
+| Guía del storefront (SSR) | `katenda_clients/apps/storefront/AGENTS.md` |
 | Contrato API / backend | `katenda_api/AGENTS.md` + `katenda_api/_context/app-doc.md` |
 | Roadmap y estado del frontend | `ROADMAP.md` (raíz del workspace) |
 | Diseño de referencia | `katenda-web` (Next.js) para módulos ya portados; **`katenda-your-online-storefront` (Lovable) para los módulos que katenda-web no cubre** |

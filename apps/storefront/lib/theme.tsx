@@ -19,11 +19,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const saved =
       typeof window !== "undefined" &&
       localStorage.getItem("katenda.theme");
-    const initial: Theme =
-      (saved as Theme | null) ??
-      (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
+    // Light por defecto (no se sigue el esquema del SO); solo persiste lo guardado.
+    const initial: Theme = (saved as Theme | null) ?? "light";
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(initial);
     document.documentElement.classList.toggle("dark", initial === "dark");

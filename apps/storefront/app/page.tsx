@@ -6,16 +6,18 @@ import {
   getStoreCategories,
   getStoreProducts,
 } from "@/services/storefrontService";
+import { requireSlug } from "@/lib/slug";
 import { StorefrontPage } from "@/components/storefront/StorefrontPage";
 import type { Category, Product } from "@/types/models";
 import type { RawPaginated } from "@/types/pagination";
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ slug?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const sp = await searchParams;
+  const slug = await requireSlug(sp.slug);
   try {
     const { store } = await getStore(slug);
     const title = `${store.name} — Compra online y pide por WhatsApp`;
@@ -38,8 +40,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StorePage({ params }: Props) {
-  const { slug } = await params;
+export default async function HomePage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const slug = await requireSlug(sp.slug);
+
   const data = await getStore(slug).catch(() => null);
   if (!data) notFound();
 

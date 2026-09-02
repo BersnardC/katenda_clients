@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -100,16 +101,16 @@ export function ProductPage({
     <div className="min-h-screen bg-background text-foreground">
       <nav className="sticky top-0 z-40 w-full bg-background/90 backdrop-blur border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-4 md:px-8 h-14 flex items-center gap-3">
-          <a
+          <Link
             href="/"
             className="flex items-center gap-2 px-3 h-9 rounded-full bg-surface border border-border text-sm font-medium"
           >
             <ArrowLeft className="size-4" /> {t("product.back")}
-          </a>
+          </Link>
           <span className="truncate font-display font-extrabold tracking-tight">
             {store.name}
           </span>
-          <a
+          <Link
             href="/"
             className="ml-auto relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
             style={{ backgroundColor: accent }}
@@ -122,7 +123,7 @@ export function ProductPage({
                 {count}
               </span>
             )}
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -281,7 +282,7 @@ export function ProductPage({
               {related.map((p) => {
                 const image = p.media?.[0]?.url;
                 return (
-                  <a
+                  <Link
                     key={p.uuid}
                     href={`/p/${p.uuid}`}
                     className="rounded-3xl bg-card border border-border overflow-hidden shadow-soft flex flex-col"
@@ -308,7 +309,7 @@ export function ProductPage({
                         {fmtCurrency(Number(p.price), primaryCurrency)}
                       </p>
                     </div>
-                  </a>
+                  </Link>
                 );
               })}
             </div>

@@ -6,16 +6,19 @@ import {
   getStore,
   getStoreProducts,
 } from "@/services/storefrontService";
+import { requireSlug } from "@/lib/slug";
 import { ProductPage } from "@/components/product/ProductPage";
 import type { Product } from "@/types/models";
 import type { RawPaginated } from "@/types/pagination";
 
 interface Props {
-  params: Promise<{ slug: string; productUuid: string }>;
+  params: Promise<{ productUuid: string }>;
+  searchParams: Promise<{ slug?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, productUuid } = await params;
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const [{ productUuid }, sp] = await Promise.all([params, searchParams]);
+  const slug = await requireSlug(sp.slug);
   try {
     const { product } = await getProduct(slug, productUuid);
     const title = `${product.name} — Compra online y pide por WhatsApp`;
@@ -38,8 +41,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductPageRoute({ params }: Props) {
-  const { slug, productUuid } = await params;
+export default async function ProductPageRoute({ params, searchParams }: Props) {
+  const [{ productUuid }, sp] = await Promise.all([params, searchParams]);
+  const slug = await requireSlug(sp.slug);
 
   const productRes = await getProduct(slug, productUuid).catch(() => null);
   const storeData = await getStore(slug).catch(() => null);
