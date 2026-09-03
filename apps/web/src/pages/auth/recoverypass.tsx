@@ -1,9 +1,13 @@
 import { Mail } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { authService } from "@/services/authService";
 import { useI18n } from "@/lib/i18n";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Field } from "@/components/auth/Field";
+
+const errMsg = (e: unknown, fallback: string) =>
+  e instanceof Error && e.message ? e.message : fallback;
 
 export function Component() {
   const { t } = useI18n();
@@ -11,14 +15,19 @@ export function Component() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || submitting || sent) return;
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await authService.forgotPassword({ email });
       setSent(true);
       toast.success(t("auth.recoverySent"));
-    }, 700);
+    } catch (err) {
+      toast.error(errMsg(err, t("auth.resetError")));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

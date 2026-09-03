@@ -33,6 +33,10 @@ const router = createBrowserRouter([
             path: "recoverypass",
             lazy: () => import("./pages/auth/recoverypass"),
           },
+          {
+            path: "reset-password",
+            lazy: () => import("./pages/auth/reset-password"),
+          },
         ],
       },
       {

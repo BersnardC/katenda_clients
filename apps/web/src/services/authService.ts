@@ -1,5 +1,12 @@
 import { api } from "@/lib/api";
-import type { AuthResponse, LoginDto, RegisterDto, User } from "@/types/auth";
+import type {
+  AuthResponse,
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+  User,
+} from "@/types/auth";
 
 export interface UpdateProfileDto {
   name?: string;
@@ -16,4 +23,10 @@ export const authService = {
   // PUT /user -> { user }
   updateProfile: (data: UpdateProfileDto) =>
     api.put<{ user: User }>("/user", data),
+  // POST /auth/password/email -> { message }
+  forgotPassword: (data: ForgotPasswordDto) =>
+    api.post<{ message: string }>("/auth/password/email", data),
+  // POST /auth/password/reset -> { message }
+  resetPassword: (data: ResetPasswordDto) =>
+    api.post<{ message: string }>("/auth/password/reset", data),
 };

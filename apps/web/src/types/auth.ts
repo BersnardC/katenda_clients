@@ -34,6 +34,17 @@ export interface RegisterDto {
   password_confirmation: string;
 }
 
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;
