@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { Providers } from "@/components/providers";
 import { RequireAuth } from "@/components/RequireAuth";
+import { RootHydrateFallback } from "@/components/RootHydrateFallback";
 
 function RootLayout() {
   return (
@@ -12,6 +13,7 @@ function RootLayout() {
 
 const router = createBrowserRouter([
   {
+    HydrateFallback: RootHydrateFallback,
     element: <RootLayout />,
     children: [
       {
