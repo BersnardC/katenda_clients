@@ -34,9 +34,37 @@ const FEATURE_KEYS = [
     many: "plans.featProducts",
     unlimited: "plans.featProductsUnlimited",
   },
+  {
+    feature: "categories",
+    one: "plans.featCategoriesOne",
+    many: "plans.featCategories",
+    unlimited: "plans.featCategoriesUnlimited",
+  },
+  {
+    feature: "roles",
+    one: "plans.featRolesOne",
+    many: "plans.featRoles",
+    unlimited: "plans.featRolesUnlimited",
+  },
+  {
+    feature: "orders_per_month",
+    one: "plans.featOrdersOne",
+    many: "plans.featOrders",
+    unlimited: "plans.featOrdersUnlimited",
+  },
+  {
+    feature: "media_per_product",
+    one: "plans.featPhotosOne",
+    many: "plans.featPhotos",
+    unlimited: "plans.featPhotosUnlimited",
+  },
 ] as const;
 
-const ORDER: Record<string, number> = { starter: 0, business: 1, pro: 2 };
+const ORDER: Record<string, number> = {
+  starter: 0,
+  business: 1,
+  enterprise: 2,
+};
 
 const errMsg = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
@@ -58,7 +86,7 @@ export function Component() {
   const decor: Record<string, string[]> = {
     starter: [t("plans.decorWhatsapp")],
     business: [t("plans.decorStats"), t("plans.decorSupport")],
-    pro: [t("plans.decorApi"), t("plans.decorBrand")],
+    enterprise: [t("plans.decorApi"), t("plans.decorBrand")],
   };
 
   const sorted = [...plans].sort(

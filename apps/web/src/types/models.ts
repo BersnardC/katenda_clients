@@ -277,7 +277,9 @@ export interface Plan {
   name: string;
   slug: string;
   price: number | string;
+  price_per_extra_order?: number | string | null;
   interval: string;
+  default_roles?: string[];
   status: number;
   limits?: PlanLimit[];
 }
