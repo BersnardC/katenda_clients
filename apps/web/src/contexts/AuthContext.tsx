@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { authService } from "@/services/authService";
+import { accountService } from "@/services/accountService";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import type { ApiMessage, LoginDto, RegisterDto, User } from "@/types/auth";
@@ -19,6 +20,7 @@ interface AuthContextType {
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  switchAccount: (accountId: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,9 +124,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     persistUser(next);
   }, []);
 
+  const switchAccount = useCallback(
+    async (accountId: number) => {
+      try {
+        const res = await accountService.switch(accountId);
+        setUser(res.user);
+        persistUser(res.user);
+        toast.success(t("accounts.switched"));
+      } catch (e) {
+        toast.error(errorMessage(e, t("accounts.switchError")));
+        throw e;
+      }
+    },
+    [t],
+  );
+
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, updateUser }}
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        updateUser,
+        switchAccount,
+      }}
     >
       {children}
     </AuthContext.Provider>

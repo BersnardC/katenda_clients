@@ -8,6 +8,7 @@ import {
 import type { ReactNode } from "react";
 import { accountService } from "@/services/accountService";
 import { getToken } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Subscription } from "@/types/models";
 
 interface AppContextType {
@@ -19,9 +20,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const accountId = user?.active_account_id ?? null;
 
   useEffect(() => {
     if (!getToken()) return;
@@ -31,14 +34,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .then((res) => {
         if (alive) setSubscription(res.subscription);
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (alive) setSubscription(null);
+      })
       .finally(() => {
         if (alive) setSubscriptionLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, accountId]);
 
   const refetchSubscription = useCallback(
     () => setReloadKey((k) => k + 1),

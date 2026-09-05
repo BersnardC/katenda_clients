@@ -16,6 +16,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useI18n } from "@/lib/i18n";
 import { storeBrand } from "@/lib/storeBrand";
 import { dashboardMock } from "@/lib/mock-data";
+import { AccountSwitcherChip } from "@/components/accounts/AccountSwitcher";
 
 export function Component() {
   const { t } = useI18n();
@@ -32,13 +33,16 @@ export function Component() {
           </p>
           <h1 className="font-display font-bold text-2xl">{user?.name}</h1>
         </div>
-        <Link
-          to="/profile"
-          className="relative size-11 rounded-2xl bg-surface border border-border grid place-items-center"
-        >
-          <Bell className="size-5" />
-          <span className="absolute top-2 right-2 size-2 rounded-full bg-accent" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <AccountSwitcherChip />
+          <Link
+            to="/profile"
+            className="relative size-11 rounded-2xl bg-surface border border-border grid place-items-center"
+          >
+            <Bell className="size-5" />
+            <span className="absolute top-2 right-2 size-2 rounded-full bg-accent" />
+          </Link>
+        </div>
       </header>
 
       <section className="mx-5 rounded-3xl p-5 gradient-brand text-primary-foreground shadow-pop">

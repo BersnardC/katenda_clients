@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useSubscription } from "@/hooks/useAccount";
+import { MemberAccountRows } from "@/components/accounts/AccountSwitcher";
 
 export function Component() {
   const { t, lang, setLang } = useI18n();
@@ -27,6 +28,7 @@ export function Component() {
 
   const planName = subData?.subscription?.plan?.name;
   const role = Array.isArray(user?.role) ? user?.role[0] : user?.role;
+  const accountsCount = user?.accounts?.length ?? 0;
   const initials = (user?.name ?? "?")
     .split(" ")
     .filter(Boolean)
@@ -78,6 +80,15 @@ export function Component() {
           </div>
         </div>
       </section>
+
+      {accountsCount > 1 && (
+        <section className="px-5 mt-6">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+            {t("accounts.title")}
+          </p>
+          <MemberAccountRows />
+        </section>
+      )}
 
       <section className="px-5 mt-6 space-y-2">
         <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
