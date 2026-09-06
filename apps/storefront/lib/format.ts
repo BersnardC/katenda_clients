@@ -16,3 +16,12 @@ export function fmtCurrency(amount: number, code: string): string {
 export function fmtDate(date: Date): string {
   return date.toLocaleDateString("es-ES");
 }
+
+export function fmtIsoDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("es-ES");
+  } catch {
+    return "";
+  }
+}

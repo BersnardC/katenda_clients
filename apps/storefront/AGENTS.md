@@ -65,6 +65,18 @@ Navegación SPA con <Link> (sin recargar); el RSC lleva la cookie → mismo slug
 | `GET /s/{slug}/categories` | `{ categories: Category[] }` |
 | `GET /s/{slug}/products/{productUuid}` | `{ product }` — con `media` + `category` + `store` |
 
+### Cliente y pedidos (auth customers)
+
+El cliente es **global de Katenda** (`customers` + pivot `account_customer`), auth con guard Sanctum separado `customers`. Endpoints client-side vía `lib/clientApi.ts` (Bearer en `katenda.customer_token`):
+
+| Endpoint | Uso |
+|---|---|
+| `POST /auth/customer/register` / `login` | → `{ customer, token }` (`lib/customerAuth.tsx`) |
+| `POST /s/{slug}/orders` | **registrar pedido ANTES de abrir WhatsApp** (`{ items:[{product_uuid, qty}], note? }`) → 201 `{ order }`. Valida stock (422), enforce `orders_per_month` (403), NO descuenta stock (se descuenta al confirmar en el panel). `services/orderService.ts` |
+| `GET /s/{slug}/orders/mine` | pedidos del cliente logueado en esa tienda (página `/cuenta`) |
+
+Stock: **solo se muestran productos con `stock > 0`**; el carrito (`lib/cart.tsx`) topea cada línea a su `stock`. Login obligatorio para pedir (sin sesión → `/cuenta`).
+
 Throttle **60/min por IP** → el ISR (`revalidate: 60`) cachea en el servidor y lo protege.
 Solo devuelve stores/products/categories **activos**.
 
@@ -72,8 +84,9 @@ Solo devuelve stores/products/categories **activos**.
 
 | URL | Archivo | Qué muestra |
 |---|---|---|
-| `{slug}.katenda.com` | `app/page.tsx` | Tienda (port fiel `tienda.tsx`): banner/logo/acento, Verificada, categorías, grid, carrito→WhatsApp |
-| `{slug}.katenda.com/p/{uuid}` | `app/p/[productUuid]/page.tsx` | Producto (port fiel `public-product.$id.tsx`): galería, cantidad, pedir por WhatsApp, relacionados |
+| `{slug}.katenda.com` | `app/page.tsx` | Tienda (port fiel `tienda.tsx`): banner/logo/acento, Verificada, categorías, grid (solo stock>0), carrito→WhatsApp con **pedido registrado antes** |
+| `{slug}.katenda.com/p/{uuid}` | `app/p/[productUuid]/page.tsx` | Producto (port fiel `public-product.$id.tsx`): galería, cantidad (topeada a stock), "Agotado", pedir por WhatsApp con registro previo, relacionados |
+| `{slug}.katenda.com/cuenta` | `app/cuenta/page.tsx` | Cuenta del cliente global (login/registro + sus pedidos `orders/mine`). Port de `cuenta.tsx` (solo pedidos; perfil/pagos/reseñas → futuras fases) |
 | 404 | `app/not-found.tsx` + `app/p/[productUuid]/not-found.tsx` | Amigables |
 
 ## Estructura de archivos
@@ -84,24 +97,30 @@ app/
   globals.css           # tokens oklch (igual a apps/web) + @source packages/ui
   page.tsx              # server: tienda (slug → fetch → StorefrontPage)
   p/[productUuid]/page.tsx  # server: producto (slug+uuid → ProductPage)
+  cuenta/page.tsx       # server: cuenta del cliente (slug → CustomerAccountPage)
   not-found.tsx         # 404 global (Tienda no encontrada)
   robots.ts
 proxy.ts                # middleware: subdominio → header + cookie
 components/
-  providers.tsx         # ThemeProvider + I18nProvider + CartProvider + Toaster(sonner)
+  providers.tsx         # ThemeProvider + I18nProvider + CustomerProvider + CartProvider + Toaster
   storefront/StorefrontPage.tsx   # client: tienda
   product/ProductPage.tsx         # client: producto
+  account/CustomerAccountPage.tsx # client: cuenta del cliente
   NotFound.tsx          # 404 compartido (client)
 services/
   api.ts                # fetch server + next:{revalidate} + NEXT_PUBLIC_API_URL
   storefrontService.ts  # getStore/getStoreProducts/getStoreCategories/getProduct/emptyPaginated
+  orderService.ts       # createOrder (POST /s/{slug}/orders) / fetchMyOrders — client-side
 lib/
   slug.ts               # resolveSlug / requireSlug (headers → searchParams → cookies)
-  cart.tsx              # carrito client (localStorage "katenda.cart")
-  i18n.tsx              # dict es/en flat + useI18n (claves store.*, product.*, notFound.*)
+  clientSlug.ts         # getClientSlug (cookie katenda.slug) — client-only
+  clientApi.ts          # fetch client-side con Bearer del customer (register/orders)
+  customerAuth.tsx      # CustomerProvider + login/register/logout/refresh (localStorage katenda.customer*)
+  cart.tsx              # carrito client (localStorage "katenda.cart", topeado a stock)
+  i18n.tsx              # dict es/en flat + useI18n (claves store.*, product.*, cuenta.*, order.*, notFound.*)
   theme.tsx             # dark mode, DEFAULT LIGHT
   whatsapp.ts           # renderWhatsappMessage / normalizeWhatsappSettings / whatsappLink
-  format.ts             # fmtCurrency (Intl, moneda primaria + secundaria)
+  format.ts             # fmtCurrency / fmtDate / fmtIsoDate
   store.ts              # ACCENT_FALLBACK (#12B886), STORE_URL_PREFIX
   utils.ts              # cn
 types/
@@ -116,24 +135,29 @@ scripts/build-standalone.mjs  # empaqueta dist-standalone/ (static + public)
 1. **Server-first**: los datos se cargan en Server Components con `next: { revalidate: 60 }`
    (`services/api.ts`). Client-side solo carrito, buscador y filtro de categorías.
 2. **Slug**: nunca hardcodear ni derivarlo del path en páginas; siempre `requireSlug()` en
-   `app/page.tsx` y `app/p/[productUuid]/page.tsx`.
+   `app/page.tsx`, `app/p/[productUuid]/page.tsx` y `app/cuenta/page.tsx`. En client components
+   usar `getClientSlug()` (cookie), nunca `requireSlug` (server-only).
 3. **Imágenes**: `<img>` normal (la API ya entrega URLs optimizadas/absolutas vía `Media::url`).
    **NO** `next/image` (exigiría `remotePatterns` y duplica optimización). Eslint ya lo permite.
 4. **Diseño**: port fiel a `tienda.tsx` / `public-product.$id.tsx`. Data real gana; campos
-   decorativos sin API → **omitir** (rating/reviews 🔒 pendiente; auth de cliente no existe → sin "Entrar").
+   decorativos sin API → **omitir** (rating/reviews 🔒 pendiente; el cliente SÍ se autentica
+   contra `customers` global: "Entrar / Mi cuenta" + `/cuenta` + prefill del nombre).
 5. **Acento dinámico**: `store.accent_color` con fallback `ACCENT_FALLBACK`; aplicar alpha como
    `accent + "26"` / `accent + "33"` en hex.
 6. **Precios**: `fmtCurrency(Number(price), currency.code)`; línea secundaria con `currency_secondary`.
-7. **WhatsApp**: número del contact `type=whatsapp` en `store.contacts` (fallback `account.phone`);
-   plantilla de `store.settings.whatsapp` vía `normalizeWhatsappSettings`; abrir con `whatsappLink(phone, msg)`.
-8. **i18n**: todas las cadenas visibles vía `t("store.*" | "product.*" | "notFound.*")` en
-   `lib/i18n.tsx` (es/en). Default `es`.
-9. **Tema**: default **light** (no sigue el esquema del SO); solo persiste lo guardado en `katenda.theme`.
-10. **UI compartida**: deep imports `@katenda_clients/ui/*` (ej. `dynamic-icon`, `sonner`). **NO barrel**.
-11. **Iconos**: `lucide-react` (0.575, misma versión que `packages/ui`); para iconos por nombre
+7. **WhatsApp + pedidos**: el pedido se registra ANTES de abrir `wa.me` (`services/orderService.ts` →
+   `POST /s/{slug}/orders`, requiere customer logueado; si no → `/cuenta`). Número del contact
+   `type=whatsapp` en `store.contacts` (fallback `account.phone`); plantilla de `store.settings.whatsapp`.
+8. **Stock**: solo se muestra producto con `stock > 0`; página directa con stock 0 → "Agotado"
+   (deshabilitado); carrito topeado a `stock` (`lib/cart.tsx`).
+9. **i18n**: todas las cadenas visibles vía `t("store.*" | "product.*" | "cuenta.*" | "order.*" | "notFound.*")`
+   en `lib/i18n.tsx` (es/en). Default `es`.
+10. **Tema**: default **light** (no sigue el esquema del SO); solo persiste lo guardado en `katenda.theme`.
+11. **UI compartida**: deep imports `@katenda_clients/ui/*` (ej. `dynamic-icon`, `sonner`). **NO barrel**.
+12. **Iconos**: `lucide-react` (0.575, misma versión que `packages/ui`); para iconos por nombre
     (categorías) usar `DynamicIcon` de `@katenda_clients/ui/dynamic-icon`.
-12. **Orden de código** en cada archivo: imports (react → next → lucide → ui → lib → components → services → types) → declaraciones → funciones → JSX.
-13. **Verificación** al cerrar: `pnpm --filter storefront check-types` | `lint` | `build` (+ smoke con `?slug=`).
+13. **Orden de código** en cada archivo: imports (react → next → lucide → ui → lib → components → services → types) → declaraciones → funciones → JSX.
+14. **Verificación** al cerrar: `pnpm --filter storefront check-types` | `lint` | `build` (+ smoke con `?slug=`).
 
 ## Deploy standalone (VPS Virtualix + CloudPanel/nginx, sin Docker)
 

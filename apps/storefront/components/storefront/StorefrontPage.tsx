@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   FileText,
+  Home,
+  LayoutGrid,
+  Loader2,
   MapPin,
+  Menu as MenuIcon,
   MessageCircle,
   Minus,
   Phone,
@@ -13,11 +18,14 @@ import {
   Search,
   ShoppingBag,
   ShoppingCart,
+  UserRound,
   X,
 } from "lucide-react";
 import { DynamicIcon } from "@katenda_clients/ui/dynamic-icon";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
+import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import {
@@ -25,6 +33,8 @@ import {
   renderWhatsappMessage,
   whatsappLink,
 } from "@/lib/whatsapp";
+import { getClientSlug } from "@/lib/clientSlug";
+import { createOrder } from "@/services/orderService";
 import type {
   Category,
   Product,
@@ -33,10 +43,10 @@ import type {
 } from "@/types/models";
 
 const menuLinks = [
-  { href: "#inicio", key: "store.nav.home" as const },
-  { href: "#categorias", key: "store.nav.categories" as const },
-  { href: "#productos", key: "store.nav.products" as const },
-  { href: "#contacto", key: "store.nav.contact" as const },
+  { href: "#inicio", key: "store.nav.home" as const, icon: Home },
+  { href: "#categorias", key: "store.nav.categories" as const, icon: LayoutGrid },
+  { href: "#productos", key: "store.nav.products" as const, icon: ShoppingBag },
+  { href: "#contacto", key: "store.nav.contact" as const, icon: Phone },
 ];
 
 interface StorefrontPageProps {
@@ -53,11 +63,25 @@ export function StorefrontPage({
   categories,
 }: StorefrontPageProps) {
   const { t } = useI18n();
-  const { lines, count, total, add, changeQty } = useCart();
+  const router = useRouter();
+  const { lines, count, total, add, changeQty, clear } = useCart();
+  const { customer: customerAccount } = useCustomerAuth();
+  const isLoggedIn = Boolean(customerAccount);
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
-  const [customer, setCustomer] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [sending, setSending] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const wasMenuOpen = useRef(false);
+
+  useEffect(() => {
+    if (wasMenuOpen.current && !menuOpen) {
+      menuButtonRef.current?.focus();
+    }
+    wasMenuOpen.current = menuOpen;
+  }, [menuOpen]);
 
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";
@@ -76,6 +100,7 @@ export function StorefrontPage({
     return products.filter(
       (p) =>
         p.status === 1 &&
+        p.stock > 0 &&
         (cat === "all" || p.category?.name === cat) &&
         (!q ||
           p.name.toLowerCase().includes(q) ||
@@ -83,8 +108,7 @@ export function StorefrontPage({
     );
   }, [products, query, cat]);
 
-  const sendOrder = () => {
-    if (count === 0) return;
+  const buildWhatsappText = () => {
     const productos = lines
       .map(
         (l) =>
@@ -92,21 +116,60 @@ export function StorefrontPage({
       )
       .join("\n");
     const text = renderWhatsappMessage(wa.template, {
-      cliente: customer.trim() || "Cliente",
+      cliente: customerName.trim() || customerAccount?.name || "Cliente",
       tienda: store.name,
       productos,
       total: wa.include_total ? fmtCurrency(total, primaryCurrency) : "—",
       fecha: fmtDate(new Date()),
     });
-    const message = wa.include_note && wa.note ? `${text}\n\n${wa.note}` : text;
-    const link = whatsappLink(waPhone, message);
-    if (link) window.open(link, "_blank");
+    return wa.include_note && wa.note ? `${text}\n\n${wa.note}` : text;
+  };
+
+  // B4: registrar el pedido ANTES de abrir WhatsApp (login obligatorio).
+  const sendOrder = async () => {
+    if (count === 0 || sending) return;
+    const slug = getClientSlug();
+
+    if (!isLoggedIn || !customerAccount) {
+      router.push("/cuenta");
+      return;
+    }
+
+    setSending(true);
+    try {
+      if (!slug) {
+        toast.error(t("store.orderError"));
+        return;
+      }
+      await createOrder(slug, {
+        items: lines.map((l) => ({ product_uuid: l.id, qty: l.qty })),
+      });
+      const link = whatsappLink(waPhone, buildWhatsappText());
+      if (link) window.open(link, "_blank");
+      clear();
+    } catch (e) {
+      const message =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message?: string }).message ?? "")
+          : "";
+      toast.error(message || t("store.orderError"));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <nav className="sticky top-0 z-40 w-full bg-background/90 backdrop-blur border-b border-border">
-        <div className="mx-auto w-full max-w-6xl px-4 md:px-8 h-14 flex items-center gap-4">
+        <div className="mx-auto w-full max-w-6xl px-4 md:px-8 h-14 flex items-center gap-3 md:gap-4">
+          <button
+            ref={menuButtonRef}
+            onClick={() => setMenuOpen(true)}
+            className="md:hidden size-10 shrink-0 grid place-items-center rounded-full bg-surface border border-border"
+            aria-label={t("store.openMenu")}
+          >
+            <MenuIcon className="size-5" />
+          </button>
           <a
             href="#inicio"
             className="flex items-center gap-2 font-display font-extrabold tracking-tight"
@@ -117,7 +180,7 @@ export function StorefrontPage({
             >
               {store.name.charAt(0)}
             </span>
-            <span className="truncate max-w-[10rem]">{store.name}</span>
+            <span className="truncate max-w-[8rem]">{store.name}</span>
           </a>
           <div className="hidden md:flex items-center gap-1 ml-2">
             {menuLinks.map((l) => (
@@ -130,9 +193,21 @@ export function StorefrontPage({
               </a>
             ))}
           </div>
+          <Link
+            href="/cuenta"
+            className="ml-auto flex items-center gap-2 px-3 h-10 rounded-full bg-surface border border-border text-sm font-medium"
+            aria-label={isLoggedIn ? t("store.myAccount") : t("store.enter")}
+          >
+            <UserRound className="size-4" />
+            <span className="hidden sm:inline max-w-24 truncate">
+              {isLoggedIn
+                ? customerAccount?.name.split(" ")[0]
+                : t("store.enter")}
+            </span>
+          </Link>
           <button
             onClick={() => setCartOpen(true)}
-            className="ml-auto relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
+            className="relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
             style={{ backgroundColor: accent }}
           >
             <ShoppingCart className="size-4" />
@@ -145,6 +220,85 @@ export function StorefrontPage({
           </button>
         </div>
       </nav>
+
+      {/* Drawer de menú móvil (port fiel tienda.tsx) */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden transition-[visibility] duration-300 ${
+          menuOpen ? "visible" : "invisible"
+        }`}
+        inert={!menuOpen}
+      >
+        <button
+          aria-label={t("store.closeMenu")}
+          onClick={() => setMenuOpen(false)}
+          tabIndex={menuOpen ? 0 : -1}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${
+            menuOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <aside
+          role="dialog"
+          aria-label={t("store.nav.home")}
+          className={`absolute inset-y-0 left-0 w-[82%] max-w-xs bg-background border-r border-border flex flex-col shadow-pop transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            menuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex items-center gap-3 px-5 h-16 border-b border-border">
+            <span
+              className="size-8 rounded-lg grid place-items-center text-white text-sm font-extrabold"
+              style={{ backgroundColor: accent }}
+            >
+              {store.name.charAt(0)}
+            </span>
+            <span className="flex-1 min-w-0 truncate font-display font-extrabold">
+              {store.name}
+            </span>
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="size-9 grid place-items-center rounded-full bg-surface border border-border"
+              aria-label={t("store.closeMenu")}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+            {menuLinks.map(({ href, key, icon: Icon }) => (
+              <a
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-3 h-12 rounded-2xl text-[15px] font-medium text-foreground hover:bg-surface transition"
+              >
+                <span
+                  className="size-9 shrink-0 grid place-items-center rounded-xl"
+                  style={{ backgroundColor: accent + "1A", color: accent }}
+                >
+                  <Icon className="size-4" />
+                </span>
+                {t(key)}
+              </a>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t border-border space-y-3 safe-bottom">
+            <Link
+              href="/cuenta"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-4 h-12 rounded-2xl bg-surface border border-border text-sm font-semibold"
+            >
+              <UserRound className="size-4" style={{ color: accent }} />
+              {isLoggedIn ? t("store.myAccount") : t("store.enter")}
+            </Link>
+            {waPhone && (
+              <p className="px-1 text-xs text-muted-foreground flex items-center gap-1.5">
+                <Phone className="size-3.5" style={{ color: accent }} />
+                {waPhone}
+              </p>
+            )}
+          </div>
+        </aside>
+      </div>
 
       <header id="inicio" className="relative scroll-mt-16">
         <div
@@ -341,6 +495,7 @@ export function StorefrontPage({
                             name: p.name,
                             price: Number(p.price),
                             image,
+                            stock: p.stock,
                           })
                         }
                         className="size-9 grid place-items-center rounded-full text-white shrink-0"
@@ -441,6 +596,11 @@ export function StorefrontPage({
                       <p className="text-sm" style={{ color: accent }}>
                         {fmtCurrency(l.price * l.qty, primaryCurrency)}
                       </p>
+                      {l.stock > 0 && l.qty >= l.stock && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {t("store.maxStock")}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -455,7 +615,8 @@ export function StorefrontPage({
                       </span>
                       <button
                         onClick={() => changeQty(l.id, 1)}
-                        className="size-8 grid place-items-center rounded-full bg-surface border border-border"
+                        disabled={l.stock > 0 && l.qty >= l.stock}
+                        className="size-8 grid place-items-center rounded-full bg-surface border border-border disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label={t("store.addOne")}
                       >
                         <Plus className="size-3.5" />
@@ -467,26 +628,44 @@ export function StorefrontPage({
             </div>
 
             <div className="border-t border-border p-5 space-y-3 safe-bottom">
-              <input
-                value={customer}
-                onChange={(e) => setCustomer(e.target.value)}
-                placeholder={t("store.customerName")}
-                maxLength={60}
-                className="w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none text-sm"
-              />
-              <div className="flex items-center justify-between font-display font-bold text-lg">
-                <span>{t("store.total")}</span>
-                <span style={{ color: accent }}>
-                  {fmtCurrency(total, primaryCurrency)}
-                </span>
-              </div>
-              <button
-                disabled={lines.length === 0}
-                onClick={sendOrder}
-                className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <MessageCircle className="size-5" /> {t("store.sendOrder")}
-              </button>
+              {!isLoggedIn ? (
+                <Link
+                  href="/cuenta"
+                  className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
+                >
+                  <UserRound className="size-5" /> {t("store.loginRequired")}
+                </Link>
+              ) : (
+                <>
+                  <input
+                    value={customerName || customerAccount?.name || ""}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder={t("store.customerName")}
+                    maxLength={60}
+                    className="w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none text-sm"
+                  />
+                  <div className="flex items-center justify-between font-display font-bold text-lg">
+                    <span>{t("store.total")}</span>
+                    <span style={{ color: accent }}>
+                      {fmtCurrency(total, primaryCurrency)}
+                    </span>
+                  </div>
+                  <button
+                    disabled={lines.length === 0 || sending}
+                    onClick={sendOrder}
+                    className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {sending ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <MessageCircle className="size-5" />
+                    )}
+                    {sending
+                      ? t("store.orderRegistering")
+                      : t("store.sendOrder")}
+                  </button>
+                </>
+              )}
               <p className="text-xs text-muted-foreground text-center">
                 {t("store.sendHint", { phone: waPhone })}
               </p>
@@ -521,3 +700,4 @@ function Chip({
     </button>
   );
 }
+

@@ -294,3 +294,62 @@ export interface Subscription {
   trial_ends_at: string | null;
   plan?: Plan;
 }
+
+export type OrderStatus =
+  | "pendiente"
+  | "confirmado"
+  | "preparando"
+  | "enviado"
+  | "entregado"
+  | "cancelado";
+
+export interface OrderCustomer {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+}
+
+export interface OrderItem {
+  id: number;
+  product_id: number | null;
+  name: string;
+  price: string;
+  qty: number;
+}
+
+export interface OrderEvent {
+  id: number;
+  status: OrderStatus;
+  note: string | null;
+  created_at: string | null;
+}
+
+export interface Order {
+  id: number;
+  uuid: string;
+  account_id: number;
+  store_id: number;
+  customer_id: number;
+  code: string;
+  status: OrderStatus;
+  subtotal: string;
+  discount: string;
+  shipping: string;
+  total: string;
+  currency_id: number | null;
+  payment_method: string | null;
+  note: string | null;
+  stock_processed: boolean;
+  created_at: string;
+  updated_at: string;
+  store?: { id: number; uuid: string; name: string; slug: string } | null;
+  customer?: OrderCustomer | null;
+  items?: OrderItem[];
+  events?: OrderEvent[];
+}

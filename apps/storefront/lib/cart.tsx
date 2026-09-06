@@ -14,16 +14,17 @@ export interface CartLine {
   name: string;
   price: number;
   image?: string | null;
+  stock: number;
   qty: number;
 }
 
-type CartInput = Omit<CartLine, "qty">;
+type CartInput = Omit<CartLine, "qty"> & { qty?: number };
 
 type CartCtx = {
   lines: CartLine[];
   count: number;
   total: number;
-  add: (item: CartInput, qty?: number) => void;
+  add: (item: CartInput) => void;
   changeQty: (id: string, delta: number) => void;
   remove: (id: string) => void;
   clear: () => void;
@@ -32,6 +33,12 @@ type CartCtx = {
 const CartContext = createContext<CartCtx | null>(null);
 
 const STORAGE_KEY = "katenda.cart";
+
+// Máximo por línea = stock vigente del producto (nunca superar el disponible).
+function clampToStock(qty: number, stock: number): number {
+  if (stock <= 0) return 0;
+  return Math.min(Math.max(1, Math.floor(qty)), stock);
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -57,12 +64,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines, hydrated]);
 
-  const add = (item: CartInput, qty = 1) => {
+  const add = (item: CartInput) => {
+    if (item.stock <= 0) return;
+    const qty = clampToStock(item.qty ?? 1, item.stock);
+    if (qty === 0) return;
     setLines((prev) => {
       const found = prev.find((l) => l.id === item.id);
       if (found) {
         return prev.map((l) =>
-          l.id === item.id ? { ...l, qty: l.qty + qty } : l,
+          l.id === item.id
+            ? { ...l, qty: clampToStock(l.qty + qty, l.stock) }
+            : l,
         );
       }
       return [...prev, { ...item, qty }];
@@ -72,7 +84,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const changeQty = (id: string, delta: number) => {
     setLines((prev) =>
       prev
-        .map((l) => (l.id === id ? { ...l, qty: l.qty + delta } : l))
+        .map((l) =>
+          l.id === id
+            ? { ...l, qty: clampToStock(l.qty + delta, l.stock) }
+            : l,
+        )
         .filter((l) => l.qty > 0),
     );
   };

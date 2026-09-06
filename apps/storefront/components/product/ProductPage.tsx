@@ -2,19 +2,24 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
   Check,
+  Loader2,
   MessageCircle,
   Minus,
   Plus,
   ShoppingBag,
   ShoppingCart,
   Truck,
+  UserRound,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
+import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import {
@@ -22,6 +27,8 @@ import {
   renderWhatsappMessage,
   whatsappLink,
 } from "@/lib/whatsapp";
+import { getClientSlug } from "@/lib/clientSlug";
+import { createOrder } from "@/services/orderService";
 import type { Product, Store } from "@/types/models";
 
 interface ProductPageProps {
@@ -38,10 +45,14 @@ export function ProductPage({
   products,
 }: ProductPageProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const { count, add } = useCart();
+  const { customer } = useCustomerAuth();
+  const isLoggedIn = Boolean(customer);
   const [qty, setQty] = useState(1);
   const [shot, setShot] = useState(0);
   const [added, setAdded] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";
@@ -60,6 +71,7 @@ export function ProductPage({
         .filter(
           (p) =>
             p.status === 1 &&
+            p.stock > 0 &&
             p.category?.name === product.category?.name &&
             p.uuid !== product.uuid,
         )
@@ -67,34 +79,66 @@ export function ProductPage({
     [products, product.category?.name, product.uuid],
   );
 
+  const outOfStock = product.stock <= 0;
+  const maxQty = outOfStock ? 0 : product.stock;
+
   const totalPrice = Number(product.price) * qty;
 
   const handleAdd = () => {
-    add(
-      {
-        id: product.uuid,
-        name: product.name,
-        price: Number(product.price),
-        image: gallery[0],
-      },
-      qty,
-    );
+    if (outOfStock) return;
+    const finalQty = Math.min(qty, maxQty);
+    if (finalQty < 1) return;
+    add({
+      id: product.uuid,
+      name: product.name,
+      price: Number(product.price),
+      image: gallery[0],
+      stock: maxQty,
+      qty: finalQty,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
   };
 
-  const orderByWhatsapp = () => {
-    const productos = `• ${qty}× ${product.name} – ${fmtCurrency(totalPrice, primaryCurrency)}`;
-    const text = renderWhatsappMessage(wa.template, {
-      cliente: "Cliente",
-      tienda: store.name,
-      productos,
-      total: wa.include_total ? fmtCurrency(totalPrice, primaryCurrency) : "—",
-      fecha: fmtDate(new Date()),
-    });
-    const message = wa.include_note && wa.note ? `${text}\n\n${wa.note}` : text;
-    const link = whatsappLink(waPhone, message);
-    if (link) window.open(link, "_blank");
+  // Registra el pedido ANTES de abrir WhatsApp (login obligatorio).
+  const orderByWhatsapp = async () => {
+    if (outOfStock || sending) return;
+    const slug = getClientSlug();
+
+    if (!isLoggedIn || !customer) {
+      router.push("/cuenta");
+      return;
+    }
+
+    setSending(true);
+    try {
+      if (!slug) {
+        toast.error(t("store.orderError"));
+        return;
+      }
+      await createOrder(slug, {
+        items: [{ product_uuid: product.uuid, qty }],
+      });
+      const productos = `• ${qty}× ${product.name} – ${fmtCurrency(totalPrice, primaryCurrency)}`;
+      const text = renderWhatsappMessage(wa.template, {
+        cliente: customer.name.split(" ")[0],
+        tienda: store.name,
+        productos,
+        total: wa.include_total ? fmtCurrency(totalPrice, primaryCurrency) : "—",
+        fecha: fmtDate(new Date()),
+      });
+      const message = wa.include_note && wa.note ? `${text}\n\n${wa.note}` : text;
+      const link = whatsappLink(waPhone, message);
+      if (link) window.open(link, "_blank");
+    } catch (e) {
+      const message =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message?: string }).message ?? "")
+          : "";
+      toast.error(message || t("store.orderError"));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -111,8 +155,20 @@ export function ProductPage({
             {store.name}
           </span>
           <Link
+            href="/cuenta"
+            className="ml-auto flex items-center gap-2 px-3 h-10 rounded-full bg-surface border border-border text-sm font-medium"
+            aria-label={isLoggedIn ? t("store.myAccount") : t("store.enter")}
+          >
+            <UserRound className="size-4" />
+            <span className="hidden sm:inline max-w-24 truncate">
+              {isLoggedIn
+                ? customer?.name.split(" ")[0]
+                : t("store.enter")}
+            </span>
+          </Link>
+          <Link
             href="/"
-            className="ml-auto relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
+            className="relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
             style={{ backgroundColor: accent }}
             aria-label={t("store.viewCart")}
           >
@@ -205,8 +261,9 @@ export function ProductPage({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="size-9 grid place-items-center rounded-full bg-surface border border-border"
+                    className="size-9 grid place-items-center rounded-full bg-surface border border-border disabled:opacity-40"
                     aria-label={t("store.removeOne")}
+                    disabled={outOfStock || qty <= 1}
                   >
                     <Minus className="size-4" />
                   </button>
@@ -214,9 +271,10 @@ export function ProductPage({
                     {qty}
                   </span>
                   <button
-                    onClick={() => setQty((q) => q + 1)}
-                    className="size-9 grid place-items-center rounded-full bg-surface border border-border"
+                    onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                    className="size-9 grid place-items-center rounded-full bg-surface border border-border disabled:opacity-40"
                     aria-label={t("store.addOne")}
+                    disabled={outOfStock || qty >= maxQty}
                   >
                     <Plus className="size-4" />
                   </button>
@@ -231,26 +289,40 @@ export function ProductPage({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-2">
-                <button
-                  onClick={handleAdd}
-                  className="h-[52px] rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
-                  style={{ backgroundColor: accent }}
-                >
-                  {added ? (
-                    <Check className="size-5" />
-                  ) : (
-                    <ShoppingCart className="size-5" />
-                  )}
-                  {added ? t("product.added") : t("product.addToCart")}
-                </button>
-                <button
-                  onClick={orderByWhatsapp}
-                  className="h-[52px] rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="size-5" /> {t("product.orderWhatsapp")}
-                </button>
-              </div>
+              {outOfStock ? (
+                <div className="mt-4 rounded-2xl bg-warning/15 text-warning-foreground font-semibold h-[52px] grid place-items-center">
+                  {t("product.outOfStock")}
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-2">
+                  <button
+                    onClick={handleAdd}
+                    className="h-[52px] rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
+                    style={{ backgroundColor: accent }}
+                  >
+                    {added ? (
+                      <Check className="size-5" />
+                    ) : (
+                      <ShoppingCart className="size-5" />
+                    )}
+                    {added ? t("product.added") : t("product.addToCart")}
+                  </button>
+                  <button
+                    onClick={orderByWhatsapp}
+                    disabled={sending}
+                    className="h-[52px] rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {sending ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <MessageCircle className="size-5" />
+                    )}
+                    {sending
+                      ? t("store.orderRegistering")
+                      : t("product.orderWhatsapp")}
+                  </button>
+                </div>
+              )}
             </div>
 
             {waPhone && (
@@ -319,3 +391,4 @@ export function ProductPage({
     </div>
   );
 }
+
