@@ -29,6 +29,7 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { ProductImg } from "@/components/common/ProductImg";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
 import {
@@ -355,11 +356,12 @@ export function StorefrontPage({
           style={{ backgroundColor: accent + "26" }}
         >
           {store.banner_url ? (
-            <img
+            <ProductImg
               src={store.banner_url}
               alt={`Banner de ${store.name}`}
               className="w-full h-full object-cover"
-              loading="lazy"
+              priority
+              fade={false}
             />
           ) : (
             <div
@@ -498,10 +500,9 @@ export function StorefrontPage({
                     >
                       <div className="aspect-square bg-muted overflow-hidden">
                         {image ? (
-                          <img
+                          <ProductImg
                             src={image}
                             alt={p.name}
-                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                         ) : (

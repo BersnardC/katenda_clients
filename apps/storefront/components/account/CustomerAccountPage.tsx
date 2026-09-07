@@ -16,7 +16,12 @@ import {
 import { useI18n, type Key } from "@/lib/i18n";
 import { useCustomerAuth, type CustomerOrder } from "@/lib/customerAuth";
 import { useCart } from "@/lib/cart";
-import { fetchMyOrders } from "@/services/orderService";
+import {
+  clearCachedOrders,
+  fetchMyOrders,
+  readCachedOrders,
+  saveCachedOrders,
+} from "@/services/orderService";
 import { fmtIsoDate } from "@/lib/format";
 
 const STATUS_KEYS: Record<string, Key> = {
@@ -43,6 +48,7 @@ export function CustomerAccountPage({
   const handleLogout = async () => {
     await logout();
     clearCart();
+    clearCachedOrders(slug);
     router.replace("/");
   };
 
@@ -92,7 +98,12 @@ export function CustomerAccountPage({
 
 function AccountBody({ customer, slug }: { customer: import("@/lib/customerAuth").Customer; slug: string }) {
   const { t } = useI18n();
-  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  // Primer pintado instantáneo desde el caché local (si existe); el fetch de
+  // siempre se hace igual al montar pero en silencio, sin el loader grande.
+  const [orders, setOrders] = useState<CustomerOrder[]>(
+    () => readCachedOrders(slug) ?? [],
+  );
+  const [hasCache] = useState(() => readCachedOrders(slug) !== null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -100,9 +111,11 @@ function AccountBody({ customer, slug }: { customer: import("@/lib/customerAuth"
     if (ordersLoading || loaded) return;
     setOrdersLoading(true);
     try {
-      setOrders(await fetchMyOrders(slug));
+      const fresh = await fetchMyOrders(slug);
+      setOrders(fresh);
+      saveCachedOrders(slug, fresh);
     } catch {
-      // no auth / error → mantener vacío
+      // no auth / error → mantener lo cacheado en pantalla
     } finally {
       setOrdersLoading(false);
       setLoaded(true);
@@ -136,7 +149,7 @@ function AccountBody({ customer, slug }: { customer: import("@/lib/customerAuth"
       </div>
 
       <div className="mt-5">
-        {ordersLoading && orders.length === 0 ? (
+        {ordersLoading && orders.length === 0 && !hasCache ? (
           <div className="py-16 text-center text-muted-foreground">
             <Loader2 className="size-8 mx-auto mb-3 animate-spin" />
           </div>

@@ -30,3 +30,39 @@ export async function fetchMyOrders(slug: string): Promise<CustomerOrder[]> {
   );
   return res.data ?? [];
 }
+
+// Cache local de pedidos del cliente (por tienda): primer pintado instantáneo
+// en /cuenta. El fetch real sigue haciéndose en cada entrada y refresca el
+// caché en segundo plano (mismo nº de requests; solo cambia el UX).
+const ORDERS_CACHE_PREFIX = "katenda.orders:";
+
+export function readCachedOrders(slug: string): CustomerOrder[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`${ORDERS_CACHE_PREFIX}${slug}`);
+    return raw ? (JSON.parse(raw) as CustomerOrder[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedOrders(slug: string, orders: CustomerOrder[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      `${ORDERS_CACHE_PREFIX}${slug}`,
+      JSON.stringify(orders),
+    );
+  } catch {
+    /* sin espacio / modo privado */
+  }
+}
+
+export function clearCachedOrders(slug: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(`${ORDERS_CACHE_PREFIX}${slug}`);
+  } catch {
+    /* noop */
+  }
+}

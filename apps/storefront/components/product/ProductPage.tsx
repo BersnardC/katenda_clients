@@ -28,6 +28,7 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { ProductImg } from "@/components/common/ProductImg";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
 import { fetchFreshProduct } from "@/services/catalogClient";
@@ -207,10 +208,12 @@ export function ProductPage({
           <div>
             <div className="aspect-square rounded-3xl overflow-hidden bg-muted border border-border">
               {gallery.length > 0 ? (
-                <img
+                <ProductImg
                   src={gallery[shot] ?? gallery[0]}
                   alt={p.name}
                   className="w-full h-full object-cover"
+                  priority
+                  fade={false}
                 />
               ) : (
                 <div className="w-full h-full grid place-items-center text-muted-foreground/40">
@@ -230,11 +233,10 @@ export function ProductPage({
                     style={i === shot ? { borderColor: accent } : undefined}
                     aria-label={t("product.viewImage", { index: i + 1 })}
                   >
-                    <img
+                    <ProductImg
                       src={g}
                       alt=""
                       className="w-full h-full object-cover"
-                      loading="lazy"
                     />
                   </button>
                 ))}
@@ -409,10 +411,9 @@ export function ProductPage({
                   >
                     <div className="aspect-square bg-muted overflow-hidden">
                       {image ? (
-                        <img
+                        <ProductImg
                           src={image}
                           alt={r.name}
-                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       ) : (
