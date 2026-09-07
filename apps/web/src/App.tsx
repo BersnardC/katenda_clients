@@ -125,6 +125,14 @@ const router = createBrowserRouter([
             path: "orders/:uuid",
             lazy: () => import("./pages/app/orders/detail"),
           },
+          {
+            path: "customers",
+            lazy: () => import("./pages/app/customers/index"),
+          },
+          {
+            path: "customers/:uuid",
+            lazy: () => import("./pages/app/customers/detail"),
+          },
         ],
       },
       {

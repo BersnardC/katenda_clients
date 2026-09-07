@@ -353,3 +353,23 @@ export interface Order {
   items?: OrderItem[];
   events?: OrderEvent[];
 }
+
+// Cliente de la cuenta (panel del comercio) — GET /customers, GET /customers/{uuid}.
+// member_since sale del pivot account_customer; los agregados de pedidos están
+// scoped a la cuenta.
+export interface Customer {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  member_since: string | null;
+  orders_count: number;
+  total_spent: number;
+  last_order_at: string | null;
+  orders?: Order[];
+}

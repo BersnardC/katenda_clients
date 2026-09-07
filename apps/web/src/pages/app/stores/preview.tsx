@@ -15,21 +15,9 @@ import { useStores } from "@/hooks/useStores";
 import { DynamicIcon } from "@/components/IconPicker";
 import { api } from "@/lib/api";
 import { ACCENT_FALLBACK, STORE_URL_PREFIX } from "@/lib/store";
+import { fmtCurrency } from "@/lib/currency";
 import type { Category, Product, Storefront, StorefrontAccount } from "@/types/models";
 import type { RawPaginated } from "@/types/pagination";
-
-const fmtCurrency = (amount: number, code: string): string => {
-  try {
-    return new Intl.NumberFormat("es", {
-      style: "currency",
-      currency: code,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return `${code} ${amount.toFixed(2)}`;
-  }
-};
 
 export function Component() {
   const { t } = useI18n();
