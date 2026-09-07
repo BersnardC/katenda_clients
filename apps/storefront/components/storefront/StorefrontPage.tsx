@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
+  Check,
   FileText,
   Home,
   LayoutGrid,
@@ -22,19 +23,12 @@ import {
   X,
 } from "lucide-react";
 import { DynamicIcon } from "@katenda_clients/ui/dynamic-icon";
-import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
-import { fmtCurrency, fmtDate } from "@/lib/format";
-import {
-  normalizeWhatsappSettings,
-  renderWhatsappMessage,
-  whatsappLink,
-} from "@/lib/whatsapp";
-import { getClientSlug } from "@/lib/clientSlug";
-import { createOrder } from "@/services/orderService";
+import { fmtCurrency } from "@/lib/format";
+import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
 import type {
   Category,
   Product,
@@ -72,7 +66,6 @@ export function StorefrontPage({
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
-  const [sending, setSending] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const wasMenuOpen = useRef(false);
 
@@ -86,12 +79,69 @@ export function StorefrontPage({
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";
   const secondaryCurrency = store.currency_secondary;
-  const wa = normalizeWhatsappSettings(store.settings);
   const waPhone =
     store.contacts?.find((c) => c.type === "whatsapp")?.value ??
     account?.phone ??
     "";
   const verified = Boolean(account?.verified);
+
+  // Pedido → WhatsApp en 2 pasos: registra el pedido y lo abre (o deja el
+  // botón habilitado para que el propio usuario haga el clic).
+  const {
+    phase: orderPhase,
+    order: registeredOrder,
+    register: registerOrder,
+    send: openWhatsapp,
+    reset: resetOrder,
+  } = useOrderWhatsapp({
+    store,
+    fallbackPhone: account?.phone,
+    customer: customerAccount,
+    requireLogin: () => router.push("/cuenta"),
+    onSent: clear,
+  });
+
+  const handleCheckout = () => {
+    registerOrder(
+      lines.map((l) => ({
+        id: l.id,
+        name: l.name,
+        price: l.price,
+        qty: l.qty,
+      })),
+      customerName,
+    );
+  };
+
+  const handleKeepShopping = () => {
+    clear();
+    resetOrder();
+  };
+
+  // Si el carrito cambia tras registrar el pedido, el enlace de WhatsApp ya no
+  // corresponde → volver al estado normal (evita enviar un resumen viejo).
+  const cartKey = lines.map((l) => `${l.id}x${l.qty}`).join("|");
+  const registeredKeyRef = useRef<string | null>(null);
+  const prevPhaseRef = useRef(orderPhase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = orderPhase;
+    if (orderPhase === "done" && prev !== "done") {
+      registeredKeyRef.current = cartKey;
+      return;
+    }
+    if (prev === "done" && orderPhase !== "done") {
+      registeredKeyRef.current = null;
+      return;
+    }
+    if (
+      orderPhase === "done" &&
+      registeredKeyRef.current !== null &&
+      registeredKeyRef.current !== cartKey
+    ) {
+      resetOrder();
+    }
+  }, [cartKey, orderPhase, resetOrder]);
 
   const activeCategories = categories.filter((c) => c.status === 1);
 
@@ -107,56 +157,6 @@ export function StorefrontPage({
           p.category?.name.toLowerCase().includes(q)),
     );
   }, [products, query, cat]);
-
-  const buildWhatsappText = () => {
-    const productos = lines
-      .map(
-        (l) =>
-          `• ${l.qty}× ${l.name} – ${fmtCurrency(l.qty * l.price, primaryCurrency)}`,
-      )
-      .join("\n");
-    const text = renderWhatsappMessage(wa.template, {
-      cliente: customerName.trim() || customerAccount?.name || "Cliente",
-      tienda: store.name,
-      productos,
-      total: wa.include_total ? fmtCurrency(total, primaryCurrency) : "—",
-      fecha: fmtDate(new Date()),
-    });
-    return wa.include_note && wa.note ? `${text}\n\n${wa.note}` : text;
-  };
-
-  // B4: registrar el pedido ANTES de abrir WhatsApp (login obligatorio).
-  const sendOrder = async () => {
-    if (count === 0 || sending) return;
-    const slug = getClientSlug();
-
-    if (!isLoggedIn || !customerAccount) {
-      router.push("/cuenta");
-      return;
-    }
-
-    setSending(true);
-    try {
-      if (!slug) {
-        toast.error(t("store.orderError"));
-        return;
-      }
-      await createOrder(slug, {
-        items: lines.map((l) => ({ product_uuid: l.id, qty: l.qty })),
-      });
-      const link = whatsappLink(waPhone, buildWhatsappText());
-      if (link) window.open(link, "_blank");
-      clear();
-    } catch (e) {
-      const message =
-        e && typeof e === "object" && "message" in e
-          ? String((e as { message?: string }).message ?? "")
-          : "";
-      toast.error(message || t("store.orderError"));
-    } finally {
-      setSending(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -635,6 +635,37 @@ export function StorefrontPage({
                 >
                   <UserRound className="size-5" /> {t("store.loginRequired")}
                 </Link>
+              ) : orderPhase === "done" && registeredOrder ? (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/30 p-3">
+                    <span className="size-7 shrink-0 rounded-full bg-[#25D366] text-white grid place-items-center">
+                      <Check className="size-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm leading-snug">
+                        {t("store.orderRegistered", {
+                          code: registeredOrder.code,
+                        })}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                        {t("store.orderRegisteredHint")}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={openWhatsapp}
+                    className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="size-5" />
+                    {t("store.openWhatsapp")}
+                  </button>
+                  <button
+                    onClick={handleKeepShopping}
+                    className="w-full h-11 rounded-2xl bg-surface border border-border text-sm font-semibold"
+                  >
+                    {t("store.keepShopping")}
+                  </button>
+                </div>
               ) : (
                 <>
                   <input
@@ -651,16 +682,18 @@ export function StorefrontPage({
                     </span>
                   </div>
                   <button
-                    disabled={lines.length === 0 || sending}
-                    onClick={sendOrder}
+                    disabled={
+                      lines.length === 0 || orderPhase === "registering"
+                    }
+                    onClick={handleCheckout}
                     className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {sending ? (
+                    {orderPhase === "registering" ? (
                       <Loader2 className="size-5 animate-spin" />
                     ) : (
                       <MessageCircle className="size-5" />
                     )}
-                    {sending
+                    {orderPhase === "registering"
                       ? t("store.orderRegistering")
                       : t("store.sendOrder")}
                   </button>
