@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,6 +29,12 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { getClientSlug } from "@/lib/clientSlug";
+import {
+  fetchFreshCategories,
+  fetchFreshProducts,
+} from "@/services/catalogClient";
 import type {
   Category,
   Product,
@@ -58,7 +64,8 @@ export function StorefrontPage({
 }: StorefrontPageProps) {
   const { t } = useI18n();
   const router = useRouter();
-  const { lines, count, total, add, changeQty, clear } = useCart();
+  const { lines, count, total, add, changeQty, clear, syncFromCatalog } =
+    useCart();
   const { customer: customerAccount } = useCustomerAuth();
   const isLoggedIn = Boolean(customerAccount);
   const [query, setQuery] = useState("");
@@ -66,6 +73,11 @@ export function StorefrontPage({
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  // Catálogo "vivo": refrescado sin recargar cuando el comercio publica.
+  const [liveCatalog, setLiveCatalog] = useState<{
+    products: Product[];
+    categories: Category[];
+  } | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const wasMenuOpen = useRef(false);
 
@@ -143,11 +155,48 @@ export function StorefrontPage({
     }
   }, [cartKey, orderPhase, resetOrder]);
 
-  const activeCategories = categories.filter((c) => c.status === 1);
+  // Fase 1 — frescura del catálogo: al montar y al volver a la pestaña
+  // (oculta >10 s) se refresca en caliente (precio/stock/estado/categorías)
+  // sin que el cliente recargue. El SSR cacheado sigue dando el 1er pintado.
+  const loadFreshCatalog = useCallback(async () => {
+    const slug = getClientSlug();
+    if (!slug) return null;
+    const [freshProducts, freshCategories] = await Promise.all([
+      fetchFreshProducts(slug),
+      fetchFreshCategories(slug),
+    ]);
+    return { products: freshProducts, categories: freshCategories };
+  }, []);
+
+  useAutoRefresh({
+    key: `catalog:${getClientSlug() ?? ""}`,
+    load: loadFreshCatalog,
+    onData: (data) => {
+      if (data) setLiveCatalog(data);
+    },
+  });
+
+  // Reconciliación del carrito: si el comercio cambió un precio/stock y el
+  // producto ya está en el carrito, la línea se alinea con el catálogo.
+  useEffect(() => {
+    if (!liveCatalog) return;
+    syncFromCatalog(
+      liveCatalog.products.map((p) => ({
+        id: p.uuid,
+        price: Number(p.price),
+        stock: p.stock,
+      })),
+    );
+  }, [liveCatalog, syncFromCatalog]);
+
+  const shownProducts = liveCatalog?.products ?? products;
+  const shownCategories = liveCatalog?.categories ?? categories;
+
+  const activeCategories = shownCategories.filter((c) => c.status === 1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter(
+    return shownProducts.filter(
       (p) =>
         p.status === 1 &&
         p.stock > 0 &&
@@ -156,7 +205,7 @@ export function StorefrontPage({
           p.name.toLowerCase().includes(q) ||
           p.category?.name.toLowerCase().includes(q)),
     );
-  }, [products, query, cat]);
+  }, [shownProducts, query, cat]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

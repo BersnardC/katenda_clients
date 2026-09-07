@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -22,6 +28,9 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { getClientSlug } from "@/lib/clientSlug";
+import { fetchFreshProduct } from "@/services/catalogClient";
 import type { Product, Store } from "@/types/models";
 
 interface ProductPageProps {
@@ -45,6 +54,10 @@ export function ProductPage({
   const [qty, setQty] = useState(1);
   const [shot, setShot] = useState(0);
   const [added, setAdded] = useState(false);
+  // Producto "vivo": detalle refrescado sin recargar (precio/stock/estado).
+  const [liveProduct, setLiveProduct] = useState<Product | null>(null);
+
+  const p = liveProduct ?? product;
 
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";
@@ -52,37 +65,37 @@ export function ProductPage({
   const waPhone =
     store.contacts?.find((c) => c.type === "whatsapp")?.value ?? "";
 
-  const gallery = product.media?.length
-    ? product.media.map((m) => m.url)
+  const gallery = p.media?.length
+    ? p.media.map((m) => m.url)
     : [];
 
   const related = useMemo(
     () =>
       products
         .filter(
-          (p) =>
-            p.status === 1 &&
-            p.stock > 0 &&
-            p.category?.name === product.category?.name &&
-            p.uuid !== product.uuid,
+          (r) =>
+            r.status === 1 &&
+            r.stock > 0 &&
+            r.category?.name === p.category?.name &&
+            r.uuid !== p.uuid,
         )
         .slice(0, 4),
-    [products, product.category?.name, product.uuid],
+    [products, p.category?.name, p.uuid],
   );
 
-  const outOfStock = product.stock <= 0;
-  const maxQty = outOfStock ? 0 : product.stock;
+  const outOfStock = p.stock <= 0;
+  const maxQty = outOfStock ? 0 : p.stock;
 
-  const totalPrice = Number(product.price) * qty;
+  const totalPrice = Number(p.price) * qty;
 
   const handleAdd = () => {
     if (outOfStock) return;
     const finalQty = Math.min(qty, maxQty);
     if (finalQty < 1) return;
     add({
-      id: product.uuid,
-      name: product.name,
-      price: Number(product.price),
+      id: p.uuid,
+      name: p.name,
+      price: Number(p.price),
       image: gallery[0],
       stock: maxQty,
       qty: finalQty,
@@ -111,9 +124,9 @@ export function ProductPage({
     registerOrder(
       [
         {
-          id: product.uuid,
-          name: product.name,
-          price: Number(product.price),
+          id: p.uuid,
+          name: p.name,
+          price: Number(p.price),
           qty,
         },
       ],
@@ -130,6 +143,22 @@ export function ProductPage({
     }
     prevQtyRef.current = qty;
   }, [qty, orderPhase, resetOrder]);
+
+  // Refresco en caliente del detalle (montaje + volver a la pestaña): si el
+  // comercio cambió precio/stock/estado, se refleja sin recargar la página.
+  const loadFreshProduct = useCallback(async () => {
+    const slug = getClientSlug();
+    if (!slug) return null;
+    return fetchFreshProduct(slug, product.uuid);
+  }, [product.uuid]);
+
+  useAutoRefresh({
+    key: `product:${getClientSlug() ?? ""}:${product.uuid}`,
+    load: loadFreshProduct,
+    onData: (data) => {
+      if (data && data.uuid === product.uuid) setLiveProduct(data);
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -179,8 +208,8 @@ export function ProductPage({
             <div className="aspect-square rounded-3xl overflow-hidden bg-muted border border-border">
               {gallery.length > 0 ? (
                 <img
-                  src={gallery[shot]}
-                  alt={product.name}
+                  src={gallery[shot] ?? gallery[0]}
+                  alt={p.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -215,11 +244,11 @@ export function ProductPage({
 
           <div>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              {product.category?.name ?? ""}
+              {p.category?.name ?? ""}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-display font-extrabold text-2xl md:text-3xl tracking-tight">
-                {product.name}
+                {p.name}
               </h1>
               {verified && (
                 <span
@@ -238,11 +267,11 @@ export function ProductPage({
                   className="font-display font-extrabold text-3xl"
                   style={{ color: accent }}
                 >
-                  {fmtCurrency(Number(product.price), primaryCurrency)}
+                  {fmtCurrency(Number(p.price), primaryCurrency)}
                 </p>
                 {secondaryCurrency && (
                   <p className="text-sm text-muted-foreground pb-1 tabular-nums">
-                    ≈ {fmtCurrency(Number(product.price), secondaryCurrency.code)}
+                    ≈ {fmtCurrency(Number(p.price), secondaryCurrency.code)}
                   </p>
                 )}
               </div>
@@ -351,13 +380,13 @@ export function ProductPage({
               </div>
             )}
 
-            {product.description && (
+            {p.description && (
               <div className="mt-5">
                 <h2 className="font-display font-bold text-lg mb-1">
                   {t("product.description")}
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {product.description}
+                  {p.description}
                 </p>
               </div>
             )}
@@ -370,19 +399,19 @@ export function ProductPage({
               {t("product.related")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-              {related.map((p) => {
-                const image = p.media?.[0]?.url;
+              {related.map((r) => {
+                const image = r.media?.[0]?.url;
                 return (
                   <Link
-                    key={p.uuid}
-                    href={`/p/${p.uuid}`}
+                    key={r.uuid}
+                    href={`/p/${r.uuid}`}
                     className="rounded-3xl bg-card border border-border overflow-hidden shadow-soft flex flex-col"
                   >
                     <div className="aspect-square bg-muted overflow-hidden">
                       {image ? (
                         <img
                           src={image}
-                          alt={p.name}
+                          alt={r.name}
                           loading="lazy"
                           className="w-full h-full object-cover"
                         />
@@ -394,10 +423,10 @@ export function ProductPage({
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm leading-snug line-clamp-2">
-                        {p.name}
+                        {r.name}
                       </h3>
                       <p className="font-display font-bold" style={{ color: accent }}>
-                        {fmtCurrency(Number(p.price), primaryCurrency)}
+                        {fmtCurrency(Number(r.price), primaryCurrency)}
                       </p>
                     </div>
                   </Link>

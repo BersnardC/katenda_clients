@@ -90,6 +90,12 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
 export const clientApi = {
   get: <T>(path: string) => request<T>(path),
+  // GET sin caché (cache-buster + `no-store`): refresco en caliente del
+  // catálogo cuando el comercio publica cambios (precio/stock/estado).
+  getFresh: <T>(path: string) => {
+    const sep = path.includes("?") ? "&" : "?";
+    return request<T>(`${path}${sep}_=${Date.now()}`, { cache: "no-store" });
+  },
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body }),
   put: <T>(path: string, body?: unknown) =>

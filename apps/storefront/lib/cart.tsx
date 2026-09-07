@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -28,6 +29,10 @@ type CartCtx = {
   changeQty: (id: string, delta: number) => void;
   remove: (id: string) => void;
   clear: () => void;
+  /** Actualiza precio/stock de las líneas según el catálogo vigente. */
+  syncFromCatalog: (
+    items: Array<{ id: string; price?: number; stock?: number }>,
+  ) => void;
 };
 
 const CartContext = createContext<CartCtx | null>(null);
@@ -97,6 +102,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines((prev) => prev.filter((l) => l.id !== id));
   };
 
+  // El carrito guarda un snapshot al agregar; si el comercio cambió el precio
+  // o el stock, se alinea la línea con el catálogo fresco (sin tocar qty).
+  // useCallback: identidad estable para poder usarla en useEffect sin loops.
+  const syncFromCatalog = useCallback<CartCtx["syncFromCatalog"]>((items) => {
+    setLines((prev) => {
+      const byId = new Map(items.map((i) => [i.id, i]));
+      let changed = false;
+      const next = prev.map((l) => {
+        const fresh = byId.get(l.id);
+        if (!fresh) return l;
+        const price =
+          typeof fresh.price === "number" &&
+          !Number.isNaN(fresh.price) &&
+          fresh.price !== l.price
+            ? fresh.price
+            : l.price;
+        const stock =
+          typeof fresh.stock === "number" && fresh.stock >= 0
+            ? fresh.stock
+            : l.stock;
+        if (price === l.price && stock === l.stock) return l;
+        changed = true;
+        return { ...l, price, stock };
+      });
+      // Si nada cambió, devolver el mismo array evita renders en cadena.
+      return changed ? next : prev;
+    });
+  }, []);
+
   const clear = () => setLines([]);
 
   const count = useMemo(() => lines.reduce((sum, l) => sum + l.qty, 0), [lines]);
@@ -107,7 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ lines, count, total, add, changeQty, remove, clear }}
+      value={{ lines, count, total, add, changeQty, remove, clear, syncFromCatalog }}
     >
       {children}
     </CartContext.Provider>
