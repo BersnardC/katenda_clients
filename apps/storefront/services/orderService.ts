@@ -32,7 +32,7 @@ export async function fetchMyOrders(slug: string): Promise<CustomerOrder[]> {
 }
 
 // Cache local de pedidos del cliente (por tienda): primer pintado instantáneo
-// en /cuenta. El fetch real sigue haciéndose en cada entrada y refresca el
+// en /account. El fetch real sigue haciéndose en cada entrada y refresca el
 // caché en segundo plano (mismo nº de requests; solo cambia el UX).
 const ORDERS_CACHE_PREFIX = "katenda.orders:";
 

@@ -30,10 +30,10 @@ interface UseOrderWhatsappOptions {
   /** Teléfono de respaldo si la tienda no tiene contacto whatsapp (account.phone). */
   fallbackPhone?: string | null;
   customer: Customer | null;
-  /** Se invoca cuando el usuario no está logueado (ir a /cuenta). */
+  /** Se invoca cuando el usuario no está logueado (ir a /account). */
   requireLogin: () => void;
-  /** Se invoca cuando WhatsApp se abrió con éxito (p. ej. limpiar carrito). */
-  onSent: () => void;
+  /** Se invoca cuando el pedido quedó registrado correctamente (p. ej. limpiar carrito). */
+  onRegistered: () => void;
 }
 
 /**
@@ -49,7 +49,7 @@ export function useOrderWhatsapp({
   fallbackPhone,
   customer,
   requireLogin,
-  onSent,
+  onRegistered,
 }: UseOrderWhatsappOptions) {
   const { t } = useI18n();
   const [phase, setPhase] = useState<OrderPhase>("idle");
@@ -69,11 +69,10 @@ export function useOrderWhatsapp({
       window.clearTimeout(autoTimerRef.current);
       autoTimerRef.current = null;
     }
-    onSent();
     setPhase("idle");
     setOrder(null);
     setLink("");
-  }, [onSent]);
+  }, []);
 
   const openUrl = useCallback((url: string): boolean => {
     let win: Window | null = null;
@@ -124,6 +123,10 @@ export function useOrderWhatsapp({
           return;
         }
 
+        // El pedido ya quedó registrado: el carrito puede vaciarse de una vez.
+        // El link de WhatsApp se arma con las `lines` capturadas, no con el carrito.
+        onRegistered();
+
         setOrder(created);
         setLink(url);
         setPhase("done");
@@ -134,8 +137,6 @@ export function useOrderWhatsapp({
         autoTimerRef.current = window.setTimeout(() => {
           if (openUrl(url)) {
             finishSent();
-          } else {
-            toast.info(t("store.popupBlocked"));
           }
         }, AUTO_OPEN_DELAY_MS);
       } catch (e) {
@@ -149,7 +150,7 @@ export function useOrderWhatsapp({
         busyRef.current = false;
       }
     },
-    [phase, customer, waPhone, wa, store, requireLogin, finishSent, openUrl, t],
+    [phase, customer, waPhone, wa, store, requireLogin, onRegistered, finishSent, openUrl, t],
   );
 
   /** Apertura manual (clic del usuario): no la bloquea ningún navegador. */
@@ -157,10 +158,8 @@ export function useOrderWhatsapp({
     if (!link) return;
     if (openUrl(link)) {
       finishSent();
-    } else {
-      toast.info(t("store.popupBlocked"));
     }
-  }, [link, openUrl, finishSent, t]);
+  }, [link, openUrl, finishSent]);
 
   /** Vuelve al estado normal (p. ej. "seguir comprando" o carrito modificado). */
   const reset = useCallback(() => {

@@ -115,8 +115,8 @@ export function ProductPage({
   } = useOrderWhatsapp({
     store,
     customer,
-    requireLogin: () => router.push("/cuenta"),
-    onSent: () => {
+    requireLogin: () => router.push("/account"),
+    onRegistered: () => {
       /* sin carrito en el producto directo */
     },
   });
@@ -175,7 +175,7 @@ export function ProductPage({
             {store.name}
           </span>
           <Link
-            href="/cuenta"
+            href="/account"
             className="ml-auto flex items-center gap-2 px-3 h-10 rounded-full bg-surface border border-border text-sm font-medium"
             aria-label={isLoggedIn ? t("store.myAccount") : t("store.enter")}
           >

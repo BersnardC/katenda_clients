@@ -110,8 +110,8 @@ export function StorefrontPage({
     store,
     fallbackPhone: account?.phone,
     customer: customerAccount,
-    requireLogin: () => router.push("/cuenta"),
-    onSent: clear,
+    requireLogin: () => router.push("/account"),
+    onRegistered: clear,
   });
 
   const handleCheckout = () => {
@@ -244,7 +244,7 @@ export function StorefrontPage({
             ))}
           </div>
           <Link
-            href="/cuenta"
+            href="/account"
             className="ml-auto flex items-center gap-2 px-3 h-10 rounded-full bg-surface border border-border text-sm font-medium"
             aria-label={isLoggedIn ? t("store.myAccount") : t("store.enter")}
           >
@@ -333,7 +333,7 @@ export function StorefrontPage({
 
           <div className="p-4 border-t border-border space-y-3 safe-bottom">
             <Link
-              href="/cuenta"
+              href="/account"
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-4 h-12 rounded-2xl bg-surface border border-border text-sm font-semibold"
             >
@@ -680,7 +680,7 @@ export function StorefrontPage({
             <div className="border-t border-border p-5 space-y-3 safe-bottom">
               {!isLoggedIn ? (
                 <Link
-                  href="/cuenta"
+                  href="/account"
                   className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
                 >
                   <UserRound className="size-5" /> {t("store.loginRequired")}
