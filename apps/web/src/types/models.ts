@@ -296,12 +296,12 @@ export interface Subscription {
 }
 
 export type OrderStatus =
-  | "pendiente"
-  | "confirmado"
-  | "preparando"
-  | "enviado"
-  | "entregado"
-  | "cancelado";
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 
 export interface OrderCustomer {
   id: number;

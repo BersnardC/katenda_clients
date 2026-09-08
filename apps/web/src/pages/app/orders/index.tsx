@@ -85,7 +85,7 @@ export function Component() {
 
   // Subtotal revenue local para el subtítulo (los ya cargados).
   const revenue = orders
-    .filter((o) => o.status !== "cancelado")
+    .filter((o) => o.status !== "cancelled")
     .reduce((s, o) => s + Number(o.total), 0);
 
   const statusChips = ["all", ...ORDER_STATUSES.map((s) => s.value)] as const;

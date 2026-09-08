@@ -3,17 +3,17 @@ import { statusColor } from "@/lib/orders";
 import type { OrderStatus } from "@/types/models";
 
 const STATUS_KEYS: Record<OrderStatus, Key> = {
-  pendiente: "orders.statusPendiente",
-  confirmado: "orders.statusConfirmado",
-  preparando: "orders.statusPreparando",
-  enviado: "orders.statusEnviado",
-  entregado: "orders.statusEntregado",
-  cancelado: "orders.statusCancelado",
+  pending: "orders.statusPending",
+  confirmed: "orders.statusConfirmed",
+  preparing: "orders.statusPreparing",
+  shipped: "orders.statusShipped",
+  delivered: "orders.statusDelivered",
+  cancelled: "orders.statusCancelled",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   const { t } = useI18n();
-  const key = STATUS_KEYS[status as OrderStatus] ?? "orders.statusPendiente";
+  const key = STATUS_KEYS[status as OrderStatus] ?? "orders.statusPending";
   const color = statusColor(status);
   return (
     <span

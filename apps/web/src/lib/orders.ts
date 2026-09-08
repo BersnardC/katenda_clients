@@ -1,19 +1,19 @@
 // Catálogo de estados de pedido (mismo diseño Lovable pedidos.$id.tsx).
 export const ORDER_STATUSES = [
-  { value: "pendiente", color: "#F7B267" },
-  { value: "confirmado", color: "#A0C4FF" },
-  { value: "preparando", color: "#BDB2FF" },
-  { value: "enviado", color: "#90E0EF" },
-  { value: "entregado", color: "#7BD3A8" },
-  { value: "cancelado", color: "#F4978E" },
+  { value: "pending", color: "#F7B267" },
+  { value: "confirmed", color: "#A0C4FF" },
+  { value: "preparing", color: "#BDB2FF" },
+  { value: "shipped", color: "#90E0EF" },
+  { value: "delivered", color: "#7BD3A8" },
+  { value: "cancelled", color: "#F4978E" },
 ] as const;
 
 export const STATUS_FLOW = [
-  "pendiente",
-  "confirmado",
-  "preparando",
-  "enviado",
-  "entregado",
+  "pending",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
 ] as const;
 
 export type OrderStatusKey = (typeof ORDER_STATUSES)[number]["value"];

@@ -21,16 +21,16 @@ const errMsg = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
 
 const STATUS_KEYS: Record<string, Key> = {
-  pendiente: "orders.statusPendiente",
-  confirmado: "orders.statusConfirmado",
-  preparando: "orders.statusPreparando",
-  enviado: "orders.statusEnviado",
-  entregado: "orders.statusEntregado",
-  cancelado: "orders.statusCancelado",
+  pending: "orders.statusPending",
+  confirmed: "orders.statusConfirmed",
+  preparing: "orders.statusPreparing",
+  shipped: "orders.statusShipped",
+  delivered: "orders.statusDelivered",
+  cancelled: "orders.statusCancelled",
 };
 
 const statusT = (t: (k: Key) => string, s: string): string =>
-  t(STATUS_KEYS[s] ?? "orders.statusPendiente");
+  t(STATUS_KEYS[s] ?? "orders.statusPending");
 
 export function Component() {
   const { t } = useI18n();
@@ -105,7 +105,7 @@ export function Component() {
   }
 
   const stepIndex = STATUS_FLOW.indexOf(order.status as (typeof STATUS_FLOW)[number]);
-  const isCancelled = order.status === "cancelado";
+  const isCancelled = order.status === "cancelled";
   const nextStatus =
     stepIndex >= 0 && stepIndex < STATUS_FLOW.length - 1
       ? (STATUS_FLOW[stepIndex + 1] as OrderStatus)
@@ -291,7 +291,7 @@ export function Component() {
             <Save className="size-4" /> {t("orders.saveNote")}
           </button>
 
-          {!isCancelled && order.status !== "entregado" && (
+          {!isCancelled && order.status !== "delivered" && (
             <div className="flex gap-2">
               {nextStatus && (
                 <button
@@ -303,7 +303,7 @@ export function Component() {
                 </button>
               )}
               <button
-                onClick={() => setStatus("cancelado")}
+                onClick={() => setStatus("cancelled")}
                 disabled={savingStatus}
                 className="h-12 px-4 rounded-2xl bg-destructive/10 text-destructive font-semibold flex items-center gap-2"
               >

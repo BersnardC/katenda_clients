@@ -25,12 +25,12 @@ import {
 import { fmtIsoDate } from "@/lib/format";
 
 const STATUS_KEYS: Record<string, Key> = {
-  pendiente: "order.status.pendiente",
-  confirmado: "order.status.confirmado",
-  preparando: "order.status.preparando",
-  enviado: "order.status.enviado",
-  entregado: "order.status.entregado",
-  cancelado: "order.status.cancelado",
+  pending: "order.status.pending",
+  confirmed: "order.status.confirmed",
+  preparing: "order.status.preparing",
+  shipped: "order.status.shipped",
+  delivered: "order.status.delivered",
+  cancelled: "order.status.cancelled",
 };
 
 export function CustomerAccountPage({
@@ -169,7 +169,7 @@ function AccountBody({ customer, slug }: { customer: import("@/lib/customerAuth"
 
 function OrderCard({ order }: { order: CustomerOrder }) {
   const { t } = useI18n();
-  const statusLabel = t(STATUS_KEYS[order.status] ?? "order.status.pendiente");
+  const statusLabel = t(STATUS_KEYS[order.status] ?? "order.status.pending");
   return (
     <article className="rounded-3xl bg-card border border-border p-4 shadow-soft">
       <div className="flex items-center justify-between gap-2">
