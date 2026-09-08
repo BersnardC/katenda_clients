@@ -178,9 +178,9 @@ export function Component() {
           </h2>
           <div className="p-4 rounded-2xl bg-card border border-border shadow-soft space-y-2 text-sm">
             <p className="font-semibold">{c.name}</p>
-            {c.phone && (
+            {c.whatsapp && (
               <p className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="size-4" /> {c.phone}
+                <Phone className="size-4" /> {c.whatsapp}
               </p>
             )}
             {c.email && (

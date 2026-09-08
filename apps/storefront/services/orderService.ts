@@ -1,7 +1,7 @@
 "use client";
 
 import { clientApi } from "@/lib/clientApi";
-import type { CustomerOrder } from "@/lib/customerAuth";
+import type { CustomerOrder, Payment } from "@/lib/customerAuth";
 
 export interface OrderItemInput {
   product_uuid: string;
@@ -27,6 +27,37 @@ export async function createOrder(
 export async function fetchMyOrders(slug: string): Promise<CustomerOrder[]> {
   const res = await clientApi.get<{ data: CustomerOrder[] }>(
     `/s/${slug}/orders/mine`,
+  );
+  return res.data ?? [];
+}
+
+export async function fetchOrder(
+  slug: string,
+  uuid: string,
+): Promise<CustomerOrder> {
+  const res = await clientApi.get<{ order: CustomerOrder }>(
+    `/s/${slug}/orders/${uuid}`,
+  );
+  return res.order;
+}
+
+export interface ReportPaymentInput {
+  method: "pago_movil" | "transferencia";
+  reference: string;
+  detail?: string;
+}
+
+export async function reportPayment(
+  slug: string,
+  uuid: string,
+  input: ReportPaymentInput,
+): Promise<{ payment: Payment; order: CustomerOrder }> {
+  return clientApi.post(`/s/${slug}/orders/${uuid}/payments`, input);
+}
+
+export async function fetchPayments(slug: string): Promise<Payment[]> {
+  const res = await clientApi.get<{ data: Payment[] }>(
+    `/s/${slug}/payments`,
   );
   return res.data ?? [];
 }

@@ -19,13 +19,27 @@ export interface Customer {
   uuid: string;
   name: string;
   email: string;
-  phone: string | null;
+  whatsapp: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
   country: string | null;
   delivery_notes: string | null;
   status: number;
+}
+
+export interface Payment {
+  id: number;
+  uuid: string;
+  method: string;
+  reference: string | null;
+  detail: string | null;
+  amount: string;
+  currency_id: number | null;
+  status: string;
+  payee_type: string;
+  created_at: string | null;
+  order?: { uuid: string; code: string; status: string } | null;
 }
 
 export interface CustomerOrderItem {
@@ -49,15 +63,29 @@ export interface CustomerOrder {
   code: string;
   status: string;
   subtotal: string;
+  discount: string;
+  shipping: string;
   total: string;
   created_at: string;
+  payment_method?: string | null;
   items?: CustomerOrderItem[];
   events?: CustomerOrderEvent[];
+  payment?: Payment | null;
 }
 
 const CUSTOMER_KEY = "katenda.customer_user";
 
 type AuthResponse = { customer: Customer; token: string };
+
+export type CustomerProfilePatch = {
+  name?: string;
+  whatsapp?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  delivery_notes?: string;
+};
 
 type Ctx = {
   customer: Customer | null;
@@ -67,10 +95,12 @@ type Ctx = {
     email: string;
     password: string;
     password_confirmation: string;
+    whatsapp: string;
   }) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  updateProfile: (patch: CustomerProfilePatch) => Promise<void>;
 };
 
 const CustomerAuthContext = createContext<Ctx | null>(null);
@@ -108,6 +138,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     email: string;
     password: string;
     password_confirmation: string;
+    whatsapp: string;
   }) => {
     const res = await clientApi.post<AuthResponse>("/auth/customer/register", data);
     persist(res.customer, res.token);
@@ -144,8 +175,24 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (patch: CustomerProfilePatch) => {
+    const res = await clientApi.put<{ customer: Customer }>(
+      "/auth/customer/me",
+      patch,
+    );
+    persist(res.customer, getCustomerToken());
+  };
+
   const value = useMemo(
-    () => ({ customer, loading, register, login, logout, refresh }),
+    () => ({
+      customer,
+      loading,
+      register,
+      login,
+      logout,
+      refresh,
+      updateProfile,
+    }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [customer, loading],
   );

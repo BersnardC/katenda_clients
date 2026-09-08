@@ -308,7 +308,7 @@ export interface OrderCustomer {
   uuid: string;
   name: string;
   email: string;
-  phone: string | null;
+  whatsapp: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
@@ -362,7 +362,7 @@ export interface Customer {
   uuid: string;
   name: string;
   email: string;
-  phone: string | null;
+  whatsapp: string | null;
   address: string | null;
   city: string | null;
   state: string | null;

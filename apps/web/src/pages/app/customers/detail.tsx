@@ -135,7 +135,7 @@ export function Component() {
           <h2 className="font-display font-bold text-lg">
             {t("customers.contact")}
           </h2>
-          <Row icon={Phone} text={customer.phone ?? "—"} />
+          <Row icon={Phone} text={customer.whatsapp ?? "—"} />
           <Row icon={Mail} text={customer.email} />
           <Row icon={MapPin} text={address || "—"} />
           <Row
