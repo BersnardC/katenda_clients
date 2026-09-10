@@ -28,6 +28,7 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
@@ -55,6 +56,7 @@ export function ProductPage({
   const [qty, setQty] = useState(1);
   const [shot, setShot] = useState(0);
   const [added, setAdded] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   // Producto "vivo": detalle refrescado sin recargar (precio/stock/estado).
   const [liveProduct, setLiveProduct] = useState<Product | null>(null);
 
@@ -186,8 +188,8 @@ export function ProductPage({
                 : t("store.enter")}
             </span>
           </Link>
-          <Link
-            href="/"
+          <button
+            onClick={() => setCartOpen(true)}
             className="relative flex items-center gap-2 px-4 h-10 rounded-full text-white text-sm font-semibold"
             style={{ backgroundColor: accent }}
             aria-label={t("store.viewCart")}
@@ -199,7 +201,7 @@ export function ProductPage({
                 {count}
               </span>
             )}
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -437,6 +439,12 @@ export function ProductPage({
           </section>
         )}
       </main>
+
+      <CartDrawer
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        store={store}
+      />
     </div>
   );
 }
