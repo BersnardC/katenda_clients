@@ -8,6 +8,7 @@ import {
   Loader2,
   MessageCircle,
   Minus,
+  Package,
   Plus,
   ShoppingBag,
   Trash2,
@@ -241,6 +242,13 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
                 <MessageCircle className="size-5" />
                 {t("store.openWhatsapp")}
               </button>
+              <Link
+                href={`/account/orders/${registeredOrder.uuid}`}
+                className="w-full h-11 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
+                style={{ backgroundColor: accent }}
+              >
+                <Package className="size-4" /> {t("store.viewOrder")}
+              </Link>
               <button
                 onClick={handleKeepShopping}
                 className="w-full h-11 rounded-2xl bg-surface border border-border text-sm font-semibold"

@@ -16,6 +16,7 @@ import {
   Loader2,
   MessageCircle,
   Minus,
+  Package,
   Plus,
   ShoppingBag,
   ShoppingCart,
@@ -363,6 +364,13 @@ export function ProductPage({
                         <MessageCircle className="size-4" />
                         {t("store.openWhatsapp")}
                       </button>
+                      <Link
+                        href={`/account/orders/${registeredOrder.uuid}`}
+                        className="w-full h-11 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
+                        style={{ backgroundColor: accent }}
+                      >
+                        <Package className="size-4" /> {t("store.viewOrder")}
+                      </Link>
                       <button
                         onClick={resetOrder}
                         className="w-full text-xs font-medium text-muted-foreground hover:text-foreground py-1 transition"
