@@ -4,19 +4,14 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
   Check,
-  Loader2,
-  MessageCircle,
   Minus,
-  Package,
   Plus,
   ShoppingBag,
   ShoppingCart,
@@ -28,7 +23,6 @@ import { useCart } from "@/lib/cart";
 import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
-import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
 import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
@@ -53,7 +47,6 @@ export function ProductPage({
   products,
 }: ProductPageProps) {
   const { t } = useI18n();
-  const router = useRouter();
   const { count, add } = useCart();
   const { customer } = useCustomerAuth();
   const isLoggedIn = Boolean(customer);
@@ -119,47 +112,6 @@ export function ProductPage({
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
   };
-
-  // Pedido → WhatsApp en 2 pasos (mismo flujo que el carrito de la tienda).
-  const {
-    phase: orderPhase,
-    order: registeredOrder,
-    register: registerOrder,
-    send: openWhatsapp,
-    reset: resetOrder,
-  } = useOrderWhatsapp({
-    store,
-    fallbackPhone: account?.phone,
-    customer,
-    requireLogin: () => router.push("/account"),
-    onRegistered: () => {
-      /* sin carrito en el producto directo */
-    },
-  });
-
-  const orderByWhatsapp = () => {
-    registerOrder(
-      [
-        {
-          id: p.uuid,
-          name: p.name,
-          price: Number(p.price),
-          qty,
-        },
-      ],
-      customer?.name.split(" ")[0],
-    );
-  };
-
-  // Si el usuario cambia la cantidad tras registrar, el enlace ya no
-  // corresponde → volver al estado normal.
-  const prevQtyRef = useRef(qty);
-  useEffect(() => {
-    if (orderPhase === "done" && qty !== prevQtyRef.current) {
-      resetOrder();
-    }
-    prevQtyRef.current = qty;
-  }, [qty, orderPhase, resetOrder]);
 
   // Refresco en caliente del detalle (montaje + volver a la pestaña): si el
   // comercio cambió precio/stock/estado, se refleja sin recargar la página.
@@ -344,56 +296,6 @@ export function ProductPage({
                     )}
                     {added ? t("product.added") : t("product.addToCart")}
                   </button>
-                  {orderPhase === "done" && registeredOrder ? (
-                    <div className="rounded-2xl bg-[#25D366]/10 border border-[#25D366]/30 p-3 space-y-2">
-                      <p className="flex items-start gap-2 text-sm font-semibold leading-snug">
-                        <span className="size-6 shrink-0 rounded-full bg-[#25D366] text-white grid place-items-center">
-                          <Check className="size-3.5" />
-                        </span>
-                        {t("store.orderRegistered", {
-                          code: registeredOrder.code,
-                        })}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {t("store.orderRegisteredHint")}
-                      </p>
-                      <button
-                        onClick={openWhatsapp}
-                        className="w-full h-11 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
-                      >
-                        <MessageCircle className="size-4" />
-                        {t("store.openWhatsapp")}
-                      </button>
-                      <Link
-                        href={`/account/orders/${registeredOrder.uuid}`}
-                        className="w-full h-11 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
-                        style={{ backgroundColor: accent }}
-                      >
-                        <Package className="size-4" /> {t("store.viewOrder")}
-                      </Link>
-                      <button
-                        onClick={resetOrder}
-                        className="w-full text-xs font-medium text-muted-foreground hover:text-foreground py-1 transition"
-                      >
-                        {t("store.keepShopping")}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={orderByWhatsapp}
-                      disabled={orderPhase === "registering"}
-                      className="h-[52px] rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                    >
-                      {orderPhase === "registering" ? (
-                        <Loader2 className="size-5 animate-spin" />
-                      ) : (
-                        <MessageCircle className="size-5" />
-                      )}
-                      {orderPhase === "registering"
-                        ? t("store.orderRegistering")
-                        : t("product.orderWhatsapp")}
-                    </button>
-                  )}
                 </div>
               )}
             </div>
