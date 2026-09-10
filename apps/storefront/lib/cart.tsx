@@ -89,11 +89,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const changeQty = (id: string, delta: number) => {
     setLines((prev) =>
       prev
-        .map((l) =>
-          l.id === id
-            ? { ...l, qty: clampToStock(l.qty + delta, l.stock) }
-            : l,
-        )
+        .map((l) => {
+          if (l.id !== id) return l;
+          const next = l.qty + delta;
+          // Decrementar hasta 0 quita la línea automáticamente
+          // (mismo comportamiento que el diseño original).
+          if (next <= 0) return { ...l, qty: 0 };
+          return { ...l, qty: clampToStock(next, l.stock) };
+        })
         .filter((l) => l.qty > 0),
     );
   };

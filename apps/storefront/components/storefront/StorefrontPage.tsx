@@ -19,6 +19,7 @@ import {
   Search,
   ShoppingBag,
   ShoppingCart,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -65,7 +66,7 @@ export function StorefrontPage({
 }: StorefrontPageProps) {
   const { t } = useI18n();
   const router = useRouter();
-  const { lines, count, total, add, changeQty, clear, syncFromCatalog } =
+  const { lines, count, total, add, changeQty, remove, clear, syncFromCatalog } =
     useCart();
   const { customer: customerAccount } = useCustomerAuth();
   const isLoggedIn = Boolean(customerAccount);
@@ -612,13 +613,23 @@ export function StorefrontPage({
               <h2 className="font-display font-bold text-lg">
                 {t("store.cart")}
               </h2>
-              <button
-                onClick={() => setCartOpen(false)}
-                className="size-9 grid place-items-center rounded-full bg-surface border border-border"
-                aria-label={t("store.cartClose")}
-              >
-                <X className="size-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {lines.length > 0 && (
+                  <button
+                    onClick={clear}
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-surface border border-border text-xs font-semibold text-muted-foreground hover:text-destructive transition"
+                  >
+                    <Trash2 className="size-3.5" /> {t("store.clearCart")}
+                  </button>
+                )}
+                <button
+                  onClick={() => setCartOpen(false)}
+                  className="size-9 grid place-items-center rounded-full bg-surface border border-border"
+                  aria-label={t("store.cartClose")}
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
@@ -670,6 +681,13 @@ export function StorefrontPage({
                         aria-label={t("store.addOne")}
                       >
                         <Plus className="size-3.5" />
+                      </button>
+                      <button
+                        onClick={() => remove(l.id)}
+                        className="size-8 grid place-items-center rounded-full bg-surface border border-border text-muted-foreground hover:text-destructive transition"
+                        aria-label={t("store.removeItem", { name: l.name })}
+                      >
+                        <Trash2 className="size-3.5" />
                       </button>
                     </div>
                   </div>
