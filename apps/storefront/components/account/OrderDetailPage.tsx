@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Building2,
   Check,
+  Loader2,
   MapPin,
   MessageCircle,
   PartyPopper,
@@ -24,12 +25,14 @@ import { CardSkeleton } from "@/components/account/accountUi";
 import { fmtCurrency, fmtIsoDate } from "@/lib/format";
 import { whatsappLink } from "@/lib/whatsapp";
 import {
-  ORDER_STATUS_COLORS,
+  canDownloadOrder,
+  canMarkReceived,
   isPayableOrder,
+  ORDER_STATUS_COLORS,
   orderStatusKey,
   payState,
 } from "@/lib/orders";
-import { fetchOrder, reportPayment } from "@/services/orderService";
+import { fetchOrder, markOrderReceived, reportPayment } from "@/services/orderService";
 import type { CustomerOrder } from "@/lib/customerAuth";
 
 type TFunc = (k: Key, vars?: Record<string, string | number>) => string;
@@ -50,6 +53,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const [notFound, setNotFound] = useState(false);
   const [method, setMethod] = useState<Method>("pago_movil");
   const [success, setSuccess] = useState(false);
+  const [receiving, setReceiving] = useState(false);
 
   useEffect(() => {
     fetchOrder(slug, orderUuid)
@@ -110,6 +114,24 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           ? String((err as { message?: string }).message ?? "")
           : "";
       toast.error(message || t("store.orderError"));
+    }
+  };
+
+  const markReceived = async () => {
+    if (receiving) return;
+    setReceiving(true);
+    try {
+      const res = await markOrderReceived(slug, order.uuid);
+      setOrder(res);
+      toast.success(t("order.received"));
+    } catch (err) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message ?? "")
+          : "";
+      toast.error(message || t("order.receiveError"));
+    } finally {
+      setReceiving(false);
     }
   };
 
@@ -252,13 +274,14 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           </p>
         </div>
 
-        {invoiceReady && (
+        {(invoiceReady || canDownloadOrder(order.status)) && (
           <button
             onClick={() => window.print()}
             className="mt-4 w-full h-12 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 print:hidden"
             style={{ backgroundColor: accent }}
           >
-            <Printer className="size-4" /> Descargar PDF / Imprimir
+            <Printer className="size-4" />{" "}
+            {invoiceReady ? t("order.downloadInvoice") : t("order.downloadOrder")}
           </button>
         )}
       </section>
@@ -300,6 +323,29 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           ))}
         </ul>
       </section>
+
+      {/* Recibido */}
+      {canMarkReceived(order.status) && (
+        <section className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft print:hidden">
+          <h2 className="font-display font-bold">{t("order.markReceived")}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t("order.markReceivedHint")}
+          </p>
+          <button
+            onClick={markReceived}
+            disabled={receiving}
+            className="mt-3 w-full h-12 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-70"
+            style={{ backgroundColor: accent }}
+          >
+            {receiving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            {t("order.markReceived")}
+          </button>
+        </section>
+      )}
 
       {/* Pago */}
       {canPay && (

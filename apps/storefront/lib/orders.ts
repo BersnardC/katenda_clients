@@ -49,3 +49,13 @@ export function isPayableOrder(
   const payable = ["confirmed", "preparing"].includes(orderStatus);
   return payable && payState(paymentStatus) !== "approved";
 }
+
+// El cliente solo puede marcar como recibido un pedido que ya fue enviado.
+export function canMarkReceived(status: string): boolean {
+  return status === "shipped";
+}
+
+// La descarga/impresión del pedido está disponible desde que va en camino.
+export function canDownloadOrder(status: string): boolean {
+  return status === "shipped" || status === "delivered";
+}

@@ -55,6 +55,16 @@ export async function reportPayment(
   return clientApi.post(`/s/${slug}/orders/${uuid}/payments`, input);
 }
 
+export async function markOrderReceived(
+  slug: string,
+  uuid: string,
+): Promise<CustomerOrder> {
+  const res = await clientApi.post<{ order: CustomerOrder }>(
+    `/s/${slug}/orders/${uuid}/receive`,
+  );
+  return res.order;
+}
+
 export async function fetchPayments(slug: string): Promise<Payment[]> {
   const res = await clientApi.get<{ data: Payment[] }>(
     `/s/${slug}/payments`,
