@@ -20,7 +20,6 @@ import {
   MessageCircle,
   Package,
   Receipt,
-  ShoppingBag,
   Star,
   Store as StoreIcon,
   User,
@@ -31,6 +30,7 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { useCart } from "@/lib/cart";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { clearCachedOrders } from "@/services/orderService";
+import { KatendaLogo } from "@/components/common/KatendaLogo";
 import type { Store, StorefrontAccount } from "@/types/models";
 
 type AccountShellCtx = {
@@ -161,7 +161,9 @@ export function AccountShell({
               <ArrowLeft className="size-4" />
             </Link>
             <span className="font-display font-extrabold tracking-tight truncate">
-              {t(titleKey(pathname))}
+              {customer
+                ? t(titleKey(pathname))
+                : t("account.enterStore", { store: store.name })}
             </span>
             {customer && (
               <button
@@ -357,29 +359,28 @@ function AuthCard({
     }
   };
 
-  const title =
-    mode === "login" ? t("account.login") : t("account.register");
-  const sub =
-    mode === "login"
-      ? t("account.loginSub", { store: storeName })
-      : t("account.registerSub", { store: storeName });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit();
+  };
+
+  const title = t("account.authTitle");
+  const sub = t("account.authSub", { store: storeName });
 
   return (
     <div className="mx-auto max-w-md">
       <div className="text-center">
-        <div
-          className="mx-auto size-14 rounded-2xl grid place-items-center text-white"
-          style={{ backgroundColor: accent }}
-        >
-          <ShoppingBag className="size-6" />
-        </div>
+        <KatendaLogo size={44} />
         <h1 className="mt-3 font-display font-extrabold text-2xl tracking-tight">
           {title}
         </h1>
         <p className="text-sm text-muted-foreground">{sub}</p>
       </div>
 
-      <div className="mt-5 rounded-3xl bg-card border border-border p-5 shadow-soft space-y-3">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-5 rounded-3xl bg-card border border-border p-5 shadow-soft space-y-3"
+      >
         {mode === "register" && (
           <IconField
             icon={<MessageCircle className="size-4 text-muted-foreground" />}
@@ -423,7 +424,7 @@ function AuthCard({
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <button
-          onClick={submit}
+          type="submit"
           disabled={submitting}
           className="w-full h-12 rounded-2xl text-white font-semibold disabled:opacity-60"
           style={{ backgroundColor: accent }}
@@ -438,6 +439,7 @@ function AuthCard({
         </button>
 
         <button
+          type="button"
           onClick={() => {
             setMode(mode === "login" ? "register" : "login");
             setError(null);
@@ -448,7 +450,7 @@ function AuthCard({
             ? t("account.toggleRegister")
             : t("account.toggleLogin")}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
