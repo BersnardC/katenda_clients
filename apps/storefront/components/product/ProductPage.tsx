@@ -30,13 +30,15 @@ import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
+import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
 import { fetchFreshProduct } from "@/services/catalogClient";
-import type { Product, Store } from "@/types/models";
+import type { Product, Store, StorefrontAccount } from "@/types/models";
 
 interface ProductPageProps {
   store: Store;
+  account: StorefrontAccount | null;
   verified: boolean;
   product: Product;
   products: Product[];
@@ -44,6 +46,7 @@ interface ProductPageProps {
 
 export function ProductPage({
   store,
+  account,
   verified,
   product,
   products,
@@ -57,6 +60,13 @@ export function ProductPage({
   const [shot, setShot] = useState(0);
   const [added, setAdded] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+
+  // Si venimos de autenticarnos para hacer el pedido, abrimos el carrito.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (takeOpenCartOnReturn()) setCartOpen(true);
+  }, []);
+
   // Producto "vivo": detalle refrescado sin recargar (precio/stock/estado).
   const [liveProduct, setLiveProduct] = useState<Product | null>(null);
 
@@ -66,7 +76,9 @@ export function ProductPage({
   const primaryCurrency = store.currency?.code ?? "USD";
   const secondaryCurrency = store.currency_secondary;
   const waPhone =
-    store.contacts?.find((c) => c.type === "whatsapp")?.value ?? "";
+    store.contacts?.find((c) => c.type === "whatsapp")?.value ??
+    account?.phone ??
+    "";
 
   const gallery = p.media?.length
     ? p.media.map((m) => m.url)
@@ -116,6 +128,7 @@ export function ProductPage({
     reset: resetOrder,
   } = useOrderWhatsapp({
     store,
+    fallbackPhone: account?.phone,
     customer,
     requireLogin: () => router.push("/account"),
     onRegistered: () => {
@@ -444,6 +457,7 @@ export function ProductPage({
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         store={store}
+        account={account}
       />
     </div>
   );

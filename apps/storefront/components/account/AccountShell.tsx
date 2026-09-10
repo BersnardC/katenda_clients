@@ -31,6 +31,10 @@ import { useCart } from "@/lib/cart";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { clearCachedOrders } from "@/services/orderService";
 import { KatendaLogo } from "@/components/common/KatendaLogo";
+import {
+  setOpenCartOnReturn,
+  takeCheckoutIntent,
+} from "@/lib/checkoutIntent";
 import type { Store, StorefrontAccount } from "@/types/models";
 
 type AccountShellCtx = {
@@ -346,8 +350,11 @@ function AuthCard({
           password_confirmation: confirm,
         });
       }
-      // Al autenticarse vuelve al flujo de compra (si venía del carrito).
-      router.replace("/");
+      // Al autenticarse vuelve al flujo de compra (si venía del carrito)
+      // o a la página en la que estaba.
+      const backTo = takeCheckoutIntent();
+      if (backTo) setOpenCartOnReturn();
+      router.replace(backTo ?? "/");
     } catch (e) {
       const message =
         e && typeof e === "object" && "message" in e

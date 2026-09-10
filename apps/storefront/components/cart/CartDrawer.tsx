@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
   Loader2,
@@ -20,6 +20,7 @@ import { useCustomerAuth } from "@/lib/customerAuth";
 import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { useOrderWhatsapp } from "@/lib/useOrderWhatsapp";
+import { setCheckoutIntent } from "@/lib/checkoutIntent";
 import type { Store, StorefrontAccount } from "@/types/models";
 
 interface CartDrawerProps {
@@ -37,6 +38,7 @@ interface CartDrawerProps {
 export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const pathname = usePathname();
   const { lines, total, changeQty, remove, clear } = useCart();
   const { customer } = useCustomerAuth();
   const isLoggedIn = Boolean(customer);
@@ -61,7 +63,10 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
     store,
     fallbackPhone: account?.phone,
     customer,
-    requireLogin: () => router.push("/account"),
+    requireLogin: () => {
+      setCheckoutIntent(pathname);
+      router.push("/account");
+    },
     onRegistered: clear,
   });
 
@@ -207,6 +212,7 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
           {!isLoggedIn ? (
             <Link
               href="/account"
+              onClick={() => setCheckoutIntent(pathname)}
               className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
             >
               <UserRound className="size-5" /> {t("store.loginRequired")}

@@ -25,6 +25,7 @@ import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
+import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
 import {
@@ -80,6 +81,12 @@ export function StorefrontPage({
     }
     wasMenuOpen.current = menuOpen;
   }, [menuOpen]);
+
+  // Si venimos de autenticarnos para hacer el pedido, abrimos el carrito.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (takeOpenCartOnReturn()) setCartOpen(true);
+  }, []);
 
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";

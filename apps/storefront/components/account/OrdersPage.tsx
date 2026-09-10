@@ -82,7 +82,16 @@ export function OrdersPage() {
         {loading && orders.length === 0 && !hasCache ? (
           Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
         ) : !orders.length ? (
-          <EmptyState icon={Package} text={t("order.empty")} />
+          <div className="text-center">
+            <EmptyState icon={Package} text={t("order.empty")} />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-2xl text-white font-semibold"
+              style={{ backgroundColor: accent }}
+            >
+              <Store className="size-4" /> {t("order.makeOrder")}
+            </Link>
+          </div>
         ) : (
           <>
             {shown.map((o) => (

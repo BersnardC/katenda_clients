@@ -59,6 +59,7 @@ export default async function ProductPageRoute({ params, searchParams }: Props) 
   return (
     <ProductPage
       store={storeData.store}
+      account={storeData.account}
       verified={Boolean(storeData.account?.verified)}
       product={product}
       products={products.data ?? []}
