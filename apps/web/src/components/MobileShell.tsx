@@ -11,9 +11,13 @@ import {
   Building2,
   Receipt,
   Contact,
+  CreditCard,
+  Wallet,
+  Tag,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 
 export function MobileShell({
@@ -50,6 +54,7 @@ export function MobileShell({
 
 function useNavItems() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const items: Array<{
     to: string;
     icon: typeof Home;
@@ -67,6 +72,13 @@ function useNavItems() {
     { to: "/customers", icon: Contact, label: t("nav.customers"), desktopOnly: true },
     { to: "/users", icon: Users, label: t("nav.users"), desktopOnly: true },
     { to: "/roles", icon: ShieldCheck, label: t("nav.roles"), desktopOnly: true },
+    ...(user?.is_superadmin
+      ? [
+          { to: "/superadmin/payments", icon: CreditCard, label: t("sa.payments"), desktopOnly: true },
+          { to: "/superadmin/payment-methods", icon: Wallet, label: t("sa.methods"), desktopOnly: true },
+          { to: "/superadmin/promotions", icon: Tag, label: t("sa.promotions"), desktopOnly: true },
+        ]
+      : []),
     { to: "/profile", icon: User, label: t("nav.profile") },
   ];
   return items;

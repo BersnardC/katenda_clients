@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { Providers } from "@/components/providers";
 import { RequireAuth } from "@/components/RequireAuth";
+import { SuperadminGate } from "@/components/SuperadminGate";
 import { RootHydrateFallback } from "@/components/RootHydrateFallback";
 
 function RootLayout() {
@@ -136,6 +137,27 @@ const router = createBrowserRouter([
           {
             path: "customers/:uuid",
             lazy: () => import("./pages/app/customers/detail"),
+          },
+          {
+            element: (
+              <SuperadminGate>
+                <Outlet />
+              </SuperadminGate>
+            ),
+            children: [
+              {
+                path: "superadmin/payments",
+                lazy: () => import("./pages/app/superadmin/payments"),
+              },
+              {
+                path: "superadmin/payment-methods",
+                lazy: () => import("./pages/app/superadmin/payment-methods"),
+              },
+              {
+                path: "superadmin/promotions",
+                lazy: () => import("./pages/app/superadmin/promotions"),
+              },
+            ],
           },
         ],
       },

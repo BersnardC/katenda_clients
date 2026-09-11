@@ -28,6 +28,7 @@ export interface User {
   email: string;
   status: number;
   active_account_id: number | null;
+  is_superadmin?: boolean;
   activeAccount?: ActiveAccountRef | null;
   role?: RoleRef[] | RoleRef | null;
   accounts?: MemberAccount[];

@@ -442,4 +442,5 @@ export interface Payment {
     renews_at: string | null;
   } | null;
   promotion?: Promotion | null;
+  account?: { id: number; uuid: string; name: string; email: string } | null;
 }
