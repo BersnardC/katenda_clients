@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Crown, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@katenda_clients/ui/dialog";
+import { ArrowLeft, Check, Crown } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSubscription } from "@/hooks/useAccount";
 import { accountService } from "@/services/accountService";
@@ -66,20 +57,11 @@ const ORDER: Record<string, number> = {
   enterprise: 2,
 };
 
-const errMsg = (e: unknown, fallback: string) =>
-  e instanceof Error && e.message ? e.message : fallback;
-
 export function Component() {
   const { t } = useI18n();
-  const {
-    data: subData,
-    loading: subLoading,
-    refetch: refetchSubscription,
-  } = useSubscription();
+  const { data: subData } = useSubscription();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toConfirm, setToConfirm] = useState<Plan | null>(null);
-  const [changing, setChanging] = useState(false);
 
   const currentPlanId = subData?.subscription?.plan_id;
 
@@ -107,21 +89,6 @@ export function Component() {
   useEffect(() => {
     load();
   }, []);
-
-  const submitChange = async () => {
-    if (!toConfirm || changing) return;
-    setChanging(true);
-    try {
-      await accountService.changePlan(toConfirm.id);
-      refetchSubscription();
-      toast.success(t("plans.changed"));
-      setToConfirm(null);
-    } catch (e) {
-      toast.error(errMsg(e, t("plans.changeError")));
-    } finally {
-      setChanging(false);
-    }
-  };
 
   return (
     <>
@@ -235,61 +202,32 @@ export function Component() {
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  disabled={isCurrent || subLoading}
-                  onClick={() => setToConfirm(plan)}
-                  className={`mt-5 w-full py-3 rounded-2xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                    featured
-                      ? "bg-white text-foreground dark:text-zinc-900"
-                      : "bg-primary text-primary-foreground"
-                  }`}
-                >
-                  {isCurrent ? t("plans.current") : t("plans.choose")}
-                </button>
+                {isCurrent ? (
+                  <span
+                    className={`mt-5 w-full py-3 rounded-2xl font-semibold text-center block ${
+                      featured
+                        ? "bg-white/20 text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {t("plans.current")}
+                  </span>
+                ) : (
+                  <Link
+                    to={`/pay-suscripcion?plan=${plan.slug}`}
+                    className={`mt-5 w-full py-3 rounded-2xl font-semibold text-center block transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                      featured
+                        ? "bg-white text-foreground dark:text-zinc-900"
+                        : "bg-primary text-primary-foreground"
+                    }`}
+                  >
+                    {t("plans.choose")}
+                  </Link>
+                )}
               </div>
             );
           })}
       </div>
-
-      <Dialog
-        open={!!toConfirm}
-        onOpenChange={(o) => {
-          if (changing && !o) return;
-          if (!o) setToConfirm(null);
-        }}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{t("plans.confirmTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("plans.confirmSub").replace(
-                "{plan}",
-                toConfirm?.name ?? "",
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <button
-              type="button"
-              onClick={() => setToConfirm(null)}
-              disabled={changing}
-              className="px-4 h-11 rounded-2xl bg-muted font-semibold text-sm cursor-pointer disabled:opacity-60"
-            >
-              {t("plans.confirmCancel")}
-            </button>
-            <button
-              type="button"
-              onClick={submitChange}
-              disabled={changing}
-              className="flex items-center gap-2 px-5 h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm shadow-pop cursor-pointer disabled:opacity-60"
-            >
-              {changing && <Loader2 className="size-4 animate-spin" />}
-              {changing ? t("common.saving") : t("plans.confirmOk")}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

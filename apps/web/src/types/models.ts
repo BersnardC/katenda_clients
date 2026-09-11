@@ -288,11 +288,15 @@ export interface Subscription {
   id: number;
   account_id: number;
   plan_id: number;
+  months: number;
+  promotion_id: number | null;
   status: number;
   started_at: string | null;
   ends_at: string | null;
   trial_ends_at: string | null;
+  renews_at: string | null;
   plan?: Plan;
+  promotion?: Promotion | null;
 }
 
 export type OrderStatus =
@@ -372,4 +376,70 @@ export interface Customer {
   total_spent: number;
   last_order_at: string | null;
   orders?: Order[];
+}
+
+// Tipo de pago configurable (pago_movil | transferencia | binance)
+export interface PaymentMethod {
+  id: number;
+  uuid: string;
+  code: string;
+  name: string;
+  label: string | null;
+  instructions: Record<string, string> | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+// Promoción / periodo de plan (3 meses por 2, 6 meses, anual...)
+export interface Promotion {
+  id: number;
+  uuid: string;
+  plan_id: number;
+  name: string;
+  slug: string | null;
+  description: string | null;
+  months: number;
+  price: number | string;
+  status: boolean;
+  is_featured: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  plan?: {
+    id: number;
+    name: string;
+    slug: string;
+    price: number | string;
+    interval: string;
+  } | null;
+}
+
+// Pago unificado (kind: order | subscription)
+export interface Payment {
+  id: number;
+  uuid: string;
+  kind: string;
+  method: string;
+  reference: string | null;
+  detail: string | null;
+  amount: string;
+  currency_id: number | null;
+  status: string;
+  payee_type: string;
+  promotion_id: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  metadata?: Record<string, unknown> | null;
+  plan_name?: string | null;
+  months?: number;
+  amount_paid?: string | number | null;
+  rate?: string | number | null;
+  order?: { uuid: string; code: string; status: string } | null;
+  subscription?: {
+    uuid: string;
+    plan_id: number;
+    status: number;
+    months: number;
+    renews_at: string | null;
+  } | null;
+  promotion?: Promotion | null;
 }

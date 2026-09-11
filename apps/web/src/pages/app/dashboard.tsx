@@ -10,6 +10,7 @@ import {
   MessageCircle,
   CreditCard,
   TrendingUp,
+  Crown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -89,6 +90,11 @@ export function Component() {
           />
           <Quick to="/admin" icon={<BarChart3 />} label={t("admin.title")} />
           <Quick to="/payments" icon={<CreditCard />} label={t("pay.title")} />
+          <Quick
+            to="/pay-suscripcion"
+            icon={<Crown />}
+            label={t("paySuscripcion.title")}
+          />
         </div>
       </section>
 
