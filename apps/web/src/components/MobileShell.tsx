@@ -60,10 +60,11 @@ function useNavItems() {
     label: string;
     accent?: boolean;
     desktopOnly?: boolean;
+    mobileOnly?: boolean;
   }> = [
     { to: "/dashboard", icon: Home, label: t("nav.home") },
     { to: "/products", icon: Package, label: t("nav.inventory")},
-    { to: "/products/new", icon: PlusCircle, label: t("nav.publish"), accent: true },
+    { to: "/products/new", icon: PlusCircle, label: t("nav.publish"), accent: true, mobileOnly: true },
     { to: "/stores", icon: Building2, label: t("nav.mystore"), desktopOnly: true },
     { to: "/categories", icon: Tags, label: t("nav.categories"), desktopOnly: true },
     { to: "/orders", icon: ClipboardList, label: t("nav.orders") },
@@ -89,7 +90,7 @@ function isActivePath(pathname: string, to: string) {
 }
 
 function SideNav() {
-  const items = useNavItems();
+  const items = useNavItems().filter((i) => !i.mobileOnly);
   const location = useLocation();
   const pathname = location.pathname;
   return (
@@ -138,7 +139,7 @@ function SideNav() {
 }
 
 function BottomNav() {
-  const items = useNavItems().filter((i) => !i.desktopOnly);
+  const items = useNavItems().filter((i) => !i.desktopOnly || i.mobileOnly);
   const location = useLocation();
   const pathname = location.pathname;
 
