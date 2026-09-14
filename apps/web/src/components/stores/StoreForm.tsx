@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
-import { BadgeCheck, Check, ImagePlus, Star, Trash2 } from "lucide-react";
+import { BadgeCheck, Check, CheckCircle2, ImagePlus, Loader2, Star, Trash2, XCircle } from "lucide-react";
 import { Switch } from "@katenda_clients/ui/switch";
 import { useI18n } from "@/lib/i18n";
 import { compressImage } from "@/lib/image";
 import { slugify } from "@/lib/utils";
 import { normalizeHex } from "@/lib/color";
-import { ACCENT_FALLBACK, ACCENT_PRESETS, STORE_URL_PREFIX } from "@/lib/store";
+import { ACCENT_FALLBACK, ACCENT_PRESETS, STORE_PUBLIC_URL } from "@/lib/store";
 import { SearchSelect } from "@/components/SearchSelect";
 import { PhoneField } from "@/components/PhoneField";
+import { storeService } from "@/services/storeService";
 import type { Country, Currency } from "@/types/models";
 
 export type StoreFormValue = {
@@ -29,27 +30,43 @@ export type StoreFormValue = {
   reviewsCount: number;
 };
 
+type SlugStatus = "idle" | "checking" | "available" | "taken";
+
 export function StoreForm({
   value,
   onChange,
   countries,
   currencies,
   accountVerified,
+  storeUuid,
 }: {
   value: StoreFormValue;
   onChange: (v: StoreFormValue) => void;
   countries: Country[];
   currencies: Currency[];
   accountVerified: boolean;
+  storeUuid?: string;
 }) {
   const { t } = useI18n();
-  const [slugTouched, setSlugTouched] = useState(!!value.slug);
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const set = (patch: Partial<StoreFormValue>) =>
     onChange({ ...value, ...patch });
 
   const setName = (name: string) => {
-    set({ name, ...(slugTouched ? {} : { slug: slugify(name) }) });
+    const newSlug = slugify(name);
+    set({ name, slug: newSlug });
+    setSlugStatus("idle");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!newSlug) return;
+    debounceRef.current = setTimeout(() => {
+      setSlugStatus("checking");
+      storeService
+        .checkSlug(newSlug, storeUuid)
+        .then((res) => setSlugStatus(res.available ? "available" : "taken"))
+        .catch(() => setSlugStatus("idle"));
+    }, 300);
   };
 
   const accent = value.accentColor ?? ACCENT_FALLBACK;
@@ -77,6 +94,15 @@ export function StoreForm({
   const inputCls =
     "w-full h-12 px-4 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm";
 
+  const slugIcon =
+    slugStatus === "checking" ? (
+      <Loader2 className="size-4 animate-spin text-muted-foreground shrink-0" />
+    ) : slugStatus === "available" ? (
+      <CheckCircle2 className="size-4 text-success shrink-0" />
+    ) : slugStatus === "taken" ? (
+      <XCircle className="size-4 text-destructive shrink-0" />
+    ) : null;
+
   return (
     <div className="space-y-4">
       <Card title={t("stores.identity")}>
@@ -89,20 +115,11 @@ export function StoreForm({
           />
         </Field>
         <Field label={t("stores.url")}>
-          <div className="flex items-center h-12 rounded-2xl bg-surface border border-border overflow-hidden">
-            <span className="px-3 text-xs text-muted-foreground">
-              {STORE_URL_PREFIX}
+          <div className="flex items-center gap-2 h-12 px-4 rounded-2xl bg-surface border border-border">
+            <span className="text-sm text-muted-foreground truncate">
+              {STORE_PUBLIC_URL(value.slug)}
             </span>
-            <input
-              value={value.slug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                set({ slug: slugify(e.target.value) });
-              }}
-              maxLength={60}
-              placeholder={t("stores.urlPlaceholder")}
-              className="flex-1 h-full bg-transparent outline-none text-sm pr-3"
-            />
+            {slugIcon}
           </div>
         </Field>
         <Field label={t("stores.description")}>

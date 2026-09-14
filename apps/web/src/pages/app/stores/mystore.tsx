@@ -170,6 +170,7 @@ export function Component() {
               countries={countries}
               currencies={currencies}
               accountVerified={account.verified}
+              storeUuid={store.uuid}
             />
             <button
               type="submit"
