@@ -356,6 +356,7 @@ export interface Order {
   customer?: OrderCustomer | null;
   items?: OrderItem[];
   events?: OrderEvent[];
+  payment?: Payment | null;
 }
 
 // Cliente de la cuenta (panel del comercio) — GET /customers, GET /customers/{uuid}.
@@ -426,6 +427,7 @@ export interface Payment {
   status: string;
   payee_type: string;
   promotion_id: number | null;
+  paid_at?: string | null;
   created_at: string | null;
   updated_at: string | null;
   metadata?: Record<string, unknown> | null;
@@ -443,4 +445,42 @@ export interface Payment {
   } | null;
   promotion?: Promotion | null;
   account?: { id: number; uuid: string; name: string; email: string } | null;
+}
+
+// Métricas del panel (GET /account/stats)
+export interface RevenuePoint {
+  date: string;
+  total: number;
+}
+
+export interface CategorySale {
+  name: string;
+  total: number;
+  percent: number;
+}
+
+export interface LowStockItem {
+  uuid: string;
+  name: string;
+  stock: number;
+}
+
+export interface RecentOrder {
+  uuid: string;
+  code: string;
+  status: string;
+  total: string;
+  created_at: string | null;
+  customer_name: string | null;
+}
+
+export interface AccountStats {
+  visits_count: number;
+  orders_count: number;
+  customers_count: number;
+  products_count: number;
+  revenue: number;
+  sales_by_category: CategorySale[];
+  low_stock: LowStockItem[];
+  recent_orders: RecentOrder[];
 }

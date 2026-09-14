@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { Order, OrderStatus } from "@/types/models";
+import type { Order, OrderStatus, Payment } from "@/types/models";
 import type { Paginated } from "@/types/pagination";
 
 export interface OrderFilters {
@@ -36,4 +36,10 @@ export const orderService = {
   // PUT /orders/{uuid}/note -> { data: Order }
   updateNote: (uuid: string, note: string) =>
     api.put<{ data: Order }>(`/orders/${uuid}/note`, { note }),
+  // POST /orders/{uuid}/payment/approve -> { payment }
+  approvePayment: (uuid: string) =>
+    api.post<{ payment: Payment }>(`/orders/${uuid}/payment/approve`),
+  // POST /orders/{uuid}/payment/reject -> { payment }
+  rejectPayment: (uuid: string) =>
+    api.post<{ payment: Payment }>(`/orders/${uuid}/payment/reject`),
 };

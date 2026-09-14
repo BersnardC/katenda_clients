@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -9,21 +10,30 @@ import {
   Store as StoreIcon,
   MessageCircle,
   CreditCard,
-  TrendingUp,
   Crown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useI18n } from "@/lib/i18n";
 import { storeBrand } from "@/lib/storeBrand";
-import { dashboardMock } from "@/lib/mock-data";
+import { accountService } from "@/services/accountService";
 import { AccountSwitcherChip } from "@/components/accounts/AccountSwitcher";
+import type { AccountStats } from "@/types/models";
 
 export function Component() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { stores, totalStores, totalProducts, storeProducts, loading } =
-    useDashboardStats();
+  const { stores, totalStores, storeProducts, loading } = useDashboardStats();
+  const [stats, setStats] = useState<AccountStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    accountService
+      .stats()
+      .then((res) => setStats(res.stats))
+      .catch(() => undefined)
+      .finally(() => setStatsLoading(false));
+  }, []);
 
   return (
     <>
@@ -39,9 +49,9 @@ export function Component() {
           <Link
             to="/profile"
             className="relative size-11 rounded-2xl bg-surface border border-border grid place-items-center"
+            aria-label={t("nav.profile")}
           >
             <Bell className="size-5" />
-            <span className="absolute top-2 right-2 size-2 rounded-full bg-accent" />
           </Link>
         </div>
       </header>
@@ -52,17 +62,17 @@ export function Component() {
           <Stat
             icon={<Eye className="size-4" />}
             label={t("dashboard.visits")}
-            value={String(dashboardMock.visits)}
+            value={statsLoading ? "…" : String(stats?.visits_count ?? 0)}
           />
           <Stat
             icon={<ShoppingBag className="size-4" />}
             label={t("dashboard.orders")}
-            value={String(dashboardMock.orders)}
+            value={statsLoading ? "…" : String(stats?.orders_count ?? 0)}
           />
           <Stat
             icon={<Package className="size-4" />}
             label={t("dashboard.products")}
-            value={loading ? "…" : String(totalProducts)}
+            value={statsLoading ? "…" : String(stats?.products_count ?? 0)}
           />
         </div>
       </section>
@@ -135,11 +145,6 @@ export function Component() {
                     <p className="font-semibold truncate">{s.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {count} {t("dashboard.products").toLowerCase()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-success font-semibold flex items-center gap-1">
-                      <TrendingUp className="size-3" /> {dashboardMock.trending}
                     </p>
                   </div>
                 </div>

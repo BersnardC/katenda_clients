@@ -8,6 +8,7 @@ import {
   Mail,
   Phone,
   Save,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, type Key } from "@/lib/i18n";
@@ -42,6 +43,7 @@ export function Component() {
   const [note, setNote] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
 
   const load = () => {
     orderService
@@ -85,6 +87,25 @@ export function Component() {
       toast.error(errMsg(err, t("orders.noteError")));
     } finally {
       setSavingNote(false);
+    }
+  };
+
+  const setPayment = async (action: "approve" | "reject") => {
+    if (savingPayment) return;
+    setSavingPayment(true);
+    try {
+      if (action === "approve") {
+        await orderService.approvePayment(uuid);
+        toast.success(t("pay.approved"));
+      } else {
+        await orderService.rejectPayment(uuid);
+        toast.success(t("pay.rejected"));
+      }
+      load();
+    } catch (err) {
+      toast.error(errMsg(err, t("orders.statusError")));
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -246,6 +267,75 @@ export function Component() {
           </div>
         </div>
       </section>
+
+      {/* Pago */}
+      {order.payment && (
+        <section className="px-5 mt-4">
+          <h2 className="font-display font-bold text-lg mb-2">
+            {t("orders.paymentTitle")}
+          </h2>
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-soft space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("pay.method")}</span>
+              <span className="font-semibold">
+                {order.payment.method === "transferencia"
+                  ? t("pay.transfer")
+                  : order.payment.method === "pago_movil"
+                    ? t("pay.pagoMovil")
+                    : order.payment.method}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("pay.ref")}</span>
+              <span className="font-semibold">
+                {order.payment.reference ?? "—"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("pay.amount")}</span>
+              <span className="font-semibold">
+                ${Number(order.payment.amount).toFixed(2)}
+              </span>
+            </div>
+            <div className="pt-1 flex justify-end">
+              <span
+                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                  order.payment.status === "approved"
+                    ? "bg-success/20 text-success-foreground"
+                    : order.payment.status === "pending"
+                      ? "bg-warning/20 text-warning-foreground"
+                      : "bg-destructive/15 text-destructive"
+                }`}
+              >
+                {order.payment.status === "approved"
+                  ? t("pay.approved")
+                  : order.payment.status === "pending"
+                    ? t("pay.pending")
+                    : t("pay.rejected")}
+              </span>
+            </div>
+            {order.payment.status === "pending" && (
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setPayment("approve")}
+                  disabled={savingPayment}
+                  className="flex-1 h-11 rounded-2xl gradient-brand text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {savingPayment && <Loader2 className="size-4 animate-spin" />}
+                  {t("orders.approvePayment")}
+                </button>
+                <button
+                  onClick={() => setPayment("reject")}
+                  disabled={savingPayment}
+                  className="flex-1 h-11 rounded-2xl bg-destructive/10 text-destructive font-semibold text-sm disabled:opacity-60"
+                >
+                  {t("orders.rejectPayment")}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Gestión */}
       <section className="px-5 mt-4">

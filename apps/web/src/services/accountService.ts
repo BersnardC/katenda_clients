@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { User } from "@/types/auth";
-import type { Account, Plan, Subscription } from "@/types/models";
+import type { Account, AccountStats, Plan, RevenuePoint, Subscription } from "@/types/models";
 
 export const accountService = {
   // GET /account -> { account }
@@ -21,4 +21,11 @@ export const accountService = {
     api.post<{ subscription: Subscription }>("/account/subscription", {
       plan_id: planId,
     }),
+  // GET /account/stats -> { stats }
+  stats: () => api.get<{ stats: AccountStats }>("/account/stats"),
+  // GET /account/stats/revenue?range= -> { revenue_series }
+  statsRevenue: (range: string) =>
+    api.get<{ revenue_series: RevenuePoint[] }>(
+      `/account/stats/revenue?range=${range}`,
+    ),
 };

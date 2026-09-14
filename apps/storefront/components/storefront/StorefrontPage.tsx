@@ -25,6 +25,7 @@ import { ACCENT_FALLBACK } from "@/lib/store";
 import { fmtCurrency } from "@/lib/format";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
+import { VisitTracker } from "@/components/storefront/VisitTracker";
 import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
@@ -151,6 +152,7 @@ export function StorefrontPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <VisitTracker slug={store.slug} />
       <nav className="sticky top-0 z-40 w-full bg-background/90 backdrop-blur border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-4 md:px-8 h-14 flex items-center gap-3 md:gap-4">
           <button
