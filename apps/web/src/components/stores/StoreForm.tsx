@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { BadgeCheck, Check, ImagePlus, Trash2 } from "lucide-react";
+import { BadgeCheck, Check, ImagePlus, Star, Trash2 } from "lucide-react";
 import { Switch } from "@katenda_clients/ui/switch";
 import { useI18n } from "@/lib/i18n";
 import { compressImage } from "@/lib/image";
@@ -25,6 +25,8 @@ export type StoreFormValue = {
   countryIso2: string | null;
   currencyId: number | null;
   currencySecondaryId: number | null;
+  rating: number;
+  reviewsCount: number;
 };
 
 export function StoreForm({
@@ -77,48 +79,44 @@ export function StoreForm({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.name")}</p>
-        <input
-          value={value.name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={60}
-          className={inputCls}
-        />
-      </div>
-
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.url")}</p>
-        <div className="flex items-center h-12 rounded-2xl bg-surface border border-border overflow-hidden">
-          <span className="px-3 text-xs text-muted-foreground">
-            {STORE_URL_PREFIX}
-          </span>
+      <Card title={t("stores.identity")}>
+        <Field label={t("stores.name")}>
           <input
-            value={value.slug}
-            onChange={(e) => {
-              setSlugTouched(true);
-              set({ slug: slugify(e.target.value) });
-            }}
+            value={value.name}
+            onChange={(e) => setName(e.target.value)}
             maxLength={60}
-            placeholder={t("stores.urlPlaceholder")}
-            className="flex-1 h-full bg-transparent outline-none text-sm pr-3"
+            className={inputCls}
           />
-        </div>
-      </div>
+        </Field>
+        <Field label={t("stores.url")}>
+          <div className="flex items-center h-12 rounded-2xl bg-surface border border-border overflow-hidden">
+            <span className="px-3 text-xs text-muted-foreground">
+              {STORE_URL_PREFIX}
+            </span>
+            <input
+              value={value.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                set({ slug: slugify(e.target.value) });
+              }}
+              maxLength={60}
+              placeholder={t("stores.urlPlaceholder")}
+              className="flex-1 h-full bg-transparent outline-none text-sm pr-3"
+            />
+          </div>
+        </Field>
+        <Field label={t("stores.description")}>
+          <textarea
+            rows={3}
+            value={value.description}
+            onChange={(e) => set({ description: e.target.value })}
+            className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
+          />
+        </Field>
+      </Card>
 
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.description")}</p>
-        <textarea
-          rows={3}
-          value={value.description}
-          onChange={(e) => set({ description: e.target.value })}
-          className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
-        />
-      </div>
-
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.accent")}</p>
-        <p className="text-xs text-muted-foreground -mt-1 mb-3">
+      <Card title={t("stores.accent")}>
+        <p className="text-xs text-muted-foreground -mt-1">
           {t("stores.accentSub")}
         </p>
         <div className="flex flex-wrap gap-3">
@@ -151,10 +149,9 @@ export function StoreForm({
             <span className="text-xs font-semibold text-muted-foreground">+</span>
           </label>
         </div>
-      </div>
+      </Card>
 
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.media")}</p>
+      <Card title={t("stores.media")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <ImageDrop
             label={t("stores.logo")}
@@ -206,107 +203,167 @@ export function StoreForm({
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.companyData")}</p>
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium mb-1.5">{t("stores.address")}</p>
-            <textarea
-              rows={2}
-              value={value.address}
-              onChange={(e) => set({ address: e.target.value })}
-              maxLength={140}
-              className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-medium mb-1.5">{t("stores.rif")}</p>
-            <input
-              value={value.rif}
-              onChange={(e) => set({ rif: e.target.value })}
-              maxLength={30}
-              className={inputCls}
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium mb-1.5">{t("stores.country")}</p>
-              <SearchSelect
-                value={value.countryIso2}
-                onChange={(iso2) => {
-                  set({ countryIso2: iso2 });
-                  const country = countries.find((c) => c.iso2 === iso2);
-                  if (country?.calling_code) {
-                    set({ phoneCode: country.calling_code });
-                  }
-                }}
-                options={countryOptions}
-                placeholder={t("stores.countryPlaceholder")}
-                searchPlaceholder={t("stores.search")}
-                emptyLabel={t("common.empty")}
-              />
-            </div>
-            <PhoneField
-              code={value.phoneCode}
-              number={value.phoneNumber}
-              onChange={(phoneCode, phoneNumber) => set({ phoneCode, phoneNumber })}
-              callingCodes={callingCodes}
-              label={t("stores.phone")}
-              numberPlaceholder="412 000 0000"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium mb-1.5">{t("stores.currency")}</p>
-        <div className="space-y-3">
-          <SearchSelect
-            value={value.currencyId ? String(value.currencyId) : null}
-            onChange={(v) => set({ currencyId: v ? Number(v) : null })}
-            options={currencyOptions}
-            placeholder={t("stores.currencyPlaceholder")}
-            searchPlaceholder={t("stores.search")}
-            emptyLabel={t("common.empty")}
+      <Card title={t("stores.companyData")}>
+        <Field label={t("stores.address")}>
+          <textarea
+            rows={2}
+            value={value.address}
+            onChange={(e) => set({ address: e.target.value })}
+            maxLength={140}
+            className="w-full px-4 py-3 rounded-2xl bg-surface border border-border outline-none focus:border-primary text-sm"
           />
-          <SearchSelect
-            value={value.currencySecondaryId ? String(value.currencySecondaryId) : null}
-            onChange={(v) => set({ currencySecondaryId: v ? Number(v) : null })}
-            options={currencyOptions}
-            placeholder={t("stores.currencySecondaryPlaceholder")}
-            searchPlaceholder={t("stores.search")}
-            emptyLabel={t("common.empty")}
-            allowClear
-            clearLabel={t("stores.currencyNone")}
+        </Field>
+        <Field label={t("stores.rif")}>
+          <input
+            value={value.rif}
+            onChange={(e) => set({ rif: e.target.value })}
+            maxLength={30}
+            className={inputCls}
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={t("stores.country")}>
+            <SearchSelect
+              value={value.countryIso2}
+              onChange={(iso2) => {
+                set({ countryIso2: iso2 });
+                const country = countries.find((c) => c.iso2 === iso2);
+                if (country?.calling_code) {
+                  set({ phoneCode: country.calling_code });
+                }
+              }}
+              options={countryOptions}
+              placeholder={t("stores.countryPlaceholder")}
+              searchPlaceholder={t("stores.search")}
+              emptyLabel={t("common.empty")}
+            />
+          </Field>
+          <PhoneField
+            code={value.phoneCode}
+            number={value.phoneNumber}
+            onChange={(phoneCode, phoneNumber) => set({ phoneCode, phoneNumber })}
+            callingCodes={callingCodes}
+            label={t("stores.phone")}
+            numberPlaceholder="412 000 0000"
           />
         </div>
-      </div>
+      </Card>
 
-      <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-card border border-border">
-        <BadgeCheck
-          className="size-5"
-          style={{ color: accountVerified ? accent : undefined }}
+      <Card title={t("stores.currency")}>
+        <SearchSelect
+          value={value.currencyId ? String(value.currencyId) : null}
+          onChange={(v) => set({ currencyId: v ? Number(v) : null })}
+          options={currencyOptions}
+          placeholder={t("stores.currencyPlaceholder")}
+          searchPlaceholder={t("stores.search")}
+          emptyLabel={t("common.empty")}
         />
-        <span className="flex-1 font-medium text-sm">{t("stores.verified")}</span>
-        <span
-          className={`text-xs font-semibold ${
-            accountVerified ? "text-success" : "text-muted-foreground"
-          }`}
+        <SearchSelect
+          value={value.currencySecondaryId ? String(value.currencySecondaryId) : null}
+          onChange={(v) => set({ currencySecondaryId: v ? Number(v) : null })}
+          options={currencyOptions}
+          placeholder={t("stores.currencySecondaryPlaceholder")}
+          searchPlaceholder={t("stores.search")}
+          emptyLabel={t("common.empty")}
+          allowClear
+          clearLabel={t("stores.currencyNone")}
+        />
+      </Card>
+
+      <Card title={t("stores.reputation")}>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between gap-3 px-4 h-14 rounded-2xl bg-surface border border-border"
         >
-          {accountVerified ? t("stores.verifiedYes") : t("stores.verifiedNo")}
-        </span>
-      </div>
+          <span className="flex items-center gap-2.5 text-sm font-medium">
+            <BadgeCheck
+              className="size-5"
+              style={{ color: accountVerified ? accent : undefined }}
+            />
+            {t("stores.verified")}
+            <span className="text-xs text-muted-foreground font-normal">
+              {accountVerified ? t("stores.verifiedYes") : t("stores.verifiedNo")}
+            </span>
+          </span>
+          <span
+            className={`relative w-11 h-6 rounded-full transition ${accountVerified ? "" : "bg-muted"}`}
+            style={accountVerified ? { backgroundColor: accent } : undefined}
+          >
+            <span
+              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${accountVerified ? "left-[22px]" : "left-0.5"}`}
+            />
+          </span>
+        </button>
 
-      <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-card border border-border">
-        <span className="flex-1 font-medium text-sm">{t("stores.active")}</span>
-        <Switch
-          checked={value.active}
-          onCheckedChange={(active) => set({ active })}
-        />
-      </div>
+        <Field label={`${t("stores.rating")} — ${value.rating.toFixed(1)}`}>
+          <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
+            <div className="flex items-center gap-0.5 shrink-0">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className="size-4"
+                  style={{ color: accent }}
+                  fill={i <= Math.round(value.rating) ? accent : "transparent"}
+                  strokeWidth={1.75}
+                />
+              ))}
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={5}
+              step={0.1}
+              value={value.rating}
+              onChange={(e) => set({ rating: Number(e.target.value) })}
+              className="flex-1 accent-current"
+              style={{ color: accent }}
+              aria-label={t("stores.rating")}
+            />
+          </div>
+        </Field>
+
+        <Field label={t("stores.reviewsCount")}>
+          <input
+            type="number"
+            min={0}
+            max={999999}
+            value={value.reviewsCount}
+            onChange={(e) => set({ reviewsCount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+            className={`${inputCls} tabular-nums`}
+          />
+        </Field>
+      </Card>
+
+      <Card title={t("stores.status")}>
+        <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
+          <span className="flex-1 font-medium text-sm">{t("stores.active")}</span>
+          <Switch
+            checked={value.active}
+            onCheckedChange={(active) => set({ active })}
+          />
+        </div>
+      </Card>
     </div>
+  );
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-3xl bg-card border border-border shadow-soft space-y-3">
+      <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-sm font-medium">{label}</span>
+      {children}
+    </label>
   );
 }
 

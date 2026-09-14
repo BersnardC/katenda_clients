@@ -36,6 +36,8 @@ const storeToForm = (s: Store, account: Account | null): StoreFormValue => {
     countryIso2: account?.country ?? null,
     currencyId: s.currency_id,
     currencySecondaryId: s.currency_secondary_id,
+    rating: 0,
+    reviewsCount: 0,
   };
 };
 
