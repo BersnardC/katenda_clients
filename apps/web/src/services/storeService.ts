@@ -47,9 +47,9 @@ export const storeService = {
   // DELETE /stores/{uuid}/banner -> { store }
   removeBanner: (uuid: string) =>
     api.delete<{ store: Store }>(`/stores/${uuid}/banner`),
-  // GET /stores/check-slug?slug=xxx&except=xxx -> { available: boolean }
+  // GET /stores/check-slug?slug=xxx&except=xxx -> { available: boolean, suggestion?: string }
   checkSlug: (slug: string, except?: string) =>
-    api.get<{ available: boolean }>(
+    api.get<{ available: boolean; suggestion?: string }>(
       `/stores/check-slug?slug=${encodeURIComponent(slug)}${except ? `&except=${encodeURIComponent(except)}` : ""}`,
     ),
 };

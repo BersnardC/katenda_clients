@@ -49,6 +49,7 @@ export function StoreForm({
 }) {
   const { t } = useI18n();
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
+  const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const set = (patch: Partial<StoreFormValue>) =>
@@ -58,15 +59,29 @@ export function StoreForm({
     const newSlug = slugify(name);
     set({ name, slug: newSlug });
     setSlugStatus("idle");
+    setSlugSuggestion(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!newSlug) return;
     debounceRef.current = setTimeout(() => {
       setSlugStatus("checking");
       storeService
         .checkSlug(newSlug, storeUuid)
-        .then((res) => setSlugStatus(res.available ? "available" : "taken"))
-        .catch(() => setSlugStatus("idle"));
+        .then((res) => {
+          setSlugStatus(res.available ? "available" : "taken");
+          setSlugSuggestion(res.available ? null : res.suggestion ?? null);
+        })
+        .catch(() => {
+          setSlugStatus("idle");
+          setSlugSuggestion(null);
+        });
     }, 300);
+  };
+
+  const applySuggestion = () => {
+    if (!slugSuggestion) return;
+    set({ slug: slugSuggestion });
+    setSlugStatus("available");
+    setSlugSuggestion(null);
   };
 
   const accent = value.accentColor ?? ACCENT_FALLBACK;
@@ -121,6 +136,26 @@ export function StoreForm({
             </span>
             {slugIcon}
           </div>
+          {slugStatus === "available" && (
+            <p className="text-xs text-success mt-1">{t("stores.slugAvailable")}</p>
+          )}
+          {slugStatus === "taken" && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("stores.slugTaken")}
+              {slugSuggestion && (
+                <>
+                  {" — "}
+                  <button
+                    type="button"
+                    onClick={applySuggestion}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    {t("stores.slugUseSuggestion")} {slugSuggestion}
+                  </button>
+                </>
+              )}
+            </p>
+          )}
         </Field>
         <Field label={t("stores.description")}>
           <textarea
