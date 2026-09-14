@@ -4,7 +4,7 @@ import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-rea
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
-import { SkeletonForm } from "@/components/skeletons";
+import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
 import { countryService } from "@/services/countryService";
 import { currencyService } from "@/services/currencyService";
@@ -160,7 +160,7 @@ export function Component() {
 
       <div className="px-5 mt-2 space-y-4 pb-4">
         {loading ? (
-          <SkeletonForm />
+          <SkeletonStoreForm />
         ) : store && account && formValue ? (
           <form onSubmit={submit} className="space-y-4">
             <StoreForm
