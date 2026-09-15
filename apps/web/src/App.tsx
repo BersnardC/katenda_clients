@@ -125,7 +125,7 @@ const router = createBrowserRouter([
           { path: "start", lazy: () => import("./pages/app/start") },
           { path: "whatsapp", lazy: () => import("./pages/app/whatsapp") },
           { path: "payments", lazy: () => import("./pages/app/payments") },
-          { path: "metrics", lazy: () => import("./pages/app/admin") },
+          { path: "metrics", lazy: () => import("./pages/app/metrics") },
           { path: "orders", lazy: () => import("./pages/app/orders/index") },
           {
             path: "orders/:uuid",
