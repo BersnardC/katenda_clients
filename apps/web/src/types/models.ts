@@ -85,6 +85,7 @@ export interface Store {
   status: number;
   currency?: Currency | null;
   currency_secondary?: Currency | null;
+  products_count?: number;
   created_at: string;
   updated_at: string;
 }

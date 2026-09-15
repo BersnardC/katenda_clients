@@ -26,8 +26,8 @@ import type { AccountStats } from "@/types/models";
 export function Component() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { account } = useApp();
-  const { stores, totalStores, storeProducts, loading } = useDashboardStats();
+  const { account, stores: contextStores, storesLoading } = useApp();
+  const { stores, totalStores, storeProducts, loading } = useDashboardStats(contextStores, storesLoading);
   const [stats, setStats] = useState<AccountStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
