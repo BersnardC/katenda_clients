@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -7,9 +7,11 @@ import { useApp } from "@/contexts/AppContext";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
+import { countryService } from "@/services/countryService";
+import { currencyService } from "@/services/currencyService";
 import { accountService } from "@/services/accountService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
-import type { Store } from "@/types/models";
+import type { Country, Currency, Store } from "@/types/models";
 
 const parsePhone = (phone: string | null) => {
   if (!phone) return { code: "", number: "" };
@@ -45,13 +47,30 @@ const errMsg = (e: unknown, fallback: string) =>
 
 export function Component() {
   const { t } = useI18n();
-  const { account, refetchAccount, stores, storesLoading, countries, currencies, refetchStores } = useApp();
+  const { account, refetchAccount, stores, storesLoading, refetchStores } = useApp();
   const store = stores[0] ?? null;
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [form, setForm] = useState<StoreFormValue | null>(null);
   const [saving, setSaving] = useState(false);
 
   const isLoading = storesLoading || account === null;
   const formValue = form ?? (store ? storeToForm(store, account) : null);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all([countryService.list(), currencyService.list()]).then(
+      ([countryRes, currencyRes]) => {
+        if (alive) {
+          setCountries(countryRes.countries ?? []);
+          setCurrencies(currencyRes.currencies ?? []);
+        }
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

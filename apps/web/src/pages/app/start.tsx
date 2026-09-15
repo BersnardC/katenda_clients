@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,6 +21,8 @@ import { slugify, dataUrlToFile } from "@/lib/utils";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
+import { countryService } from "@/services/countryService";
+import { currencyService } from "@/services/currencyService";
 import { accountService } from "@/services/accountService";
 import { categoryService } from "@/services/categoryService";
 import { productService } from "@/services/productService";
@@ -75,8 +77,10 @@ const inputClass =
 export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { account, refetchAccount, stores, storesLoading, countries, currencies } = useApp();
+  const { account, refetchAccount, stores, storesLoading } = useApp();
   const store = stores[0] ?? null;
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<StoreFormValue | null>(null);
   const [saving, setSaving] = useState(false);
@@ -90,6 +94,21 @@ export function Component() {
   ]);
 
   const formValue = form ?? (store ? storeToForm(store, account) : null);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all([countryService.list(), currencyService.list()]).then(
+      ([countryRes, currencyRes]) => {
+        if (alive) {
+          setCountries(countryRes.countries ?? []);
+          setCurrencies(currencyRes.currencies ?? []);
+        }
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const saveStore = async () => {
     if (!store || !formValue || !account) return;
