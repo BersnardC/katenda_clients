@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { useApp } from "@/contexts/AppContext";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
@@ -10,7 +11,7 @@ import { countryService } from "@/services/countryService";
 import { currencyService } from "@/services/currencyService";
 import { accountService } from "@/services/accountService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
-import type { Account, Country, Currency, Store } from "@/types/models";
+import type { Country, Currency, Store } from "@/types/models";
 
 const parsePhone = (phone: string | null) => {
   if (!phone) return { code: "", number: "" };
@@ -19,7 +20,7 @@ const parsePhone = (phone: string | null) => {
   return { code: "", number: phone.trim() };
 };
 
-const storeToForm = (s: Store, account: Account | null): StoreFormValue => {
+const storeToForm = (s: Store, account: { phone: string | null; address: string | null; rif: string | null; country: string | null } | null): StoreFormValue => {
   const phone = parsePhone(account?.phone ?? null);
   return {
     name: s.name,
@@ -46,8 +47,8 @@ const errMsg = (e: unknown, fallback: string) =>
 
 export function Component() {
   const { t } = useI18n();
+  const { account, refetchAccount } = useApp();
   const [store, setStore] = useState<Store | null>(null);
-  const [account, setAccount] = useState<Account | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [form, setForm] = useState<StoreFormValue | null>(null);
@@ -59,16 +60,13 @@ export function Component() {
       storeService.list(),
       countryService.list(),
       currencyService.list(),
-      accountService.show(),
     ])
-      .then(([s, c, cu, ac]) => {
+      .then(([s, c, cu]) => {
         const st = s.data?.[0] ?? null;
-        const acc = ac.account ?? null;
         setStore(st);
-        setAccount(acc);
         setCountries(c.countries ?? []);
         setCurrencies(cu.currencies ?? []);
-        if (st) setForm(storeToForm(st, acc));
+        if (st) setForm(storeToForm(st, account));
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
@@ -107,6 +105,7 @@ export function Component() {
         country: formValue.countryIso2 || undefined,
         phone,
       });
+      refetchAccount();
       if (formValue.logo && formValue.logo.startsWith("data:")) {
         const file = await dataUrlToFile(formValue.logo, "logo.jpg");
         await storeService.uploadLogo(store.uuid, file);

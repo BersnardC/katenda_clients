@@ -239,6 +239,7 @@ export interface Account {
   state: string | null;
   country: string | null;
   verified: boolean;
+  onboarded: boolean;
   country_info?: Country | null;
   status: number;
   created_at: string;

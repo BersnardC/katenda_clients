@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  ArrowRight,
   Bell,
   Eye,
   ShoppingBag,
   Package,
   Plus,
   BarChart3,
+  Rocket,
   Store as StoreIcon,
   MessageCircle,
   CreditCard,
   Crown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useApp } from "@/contexts/AppContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useI18n } from "@/lib/i18n";
 import { storeBrand } from "@/lib/storeBrand";
@@ -23,6 +26,7 @@ import type { AccountStats } from "@/types/models";
 export function Component() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { account } = useApp();
   const { stores, totalStores, storeProducts, loading } = useDashboardStats();
   const [stats, setStats] = useState<AccountStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -76,6 +80,26 @@ export function Component() {
           />
         </div>
       </section>
+
+      {account && !account.onboarded && (
+        <Link
+          to="/start"
+          className="mx-5 mt-4 mb-2 flex items-center gap-3 p-4 rounded-2xl bg-card border border-primary/30 shadow-soft"
+        >
+          <span className="size-11 shrink-0 grid place-items-center rounded-xl gradient-brand text-primary-foreground">
+            <Rocket className="size-5" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-display font-bold">
+              {t("onboarding.bannerTitle")}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {t("onboarding.bannerSubtitle")}
+            </span>
+          </span>
+          <ArrowRight className="size-5 text-primary" />
+        </Link>
+      )}
 
       <section className="px-5 mt-6">
         <h2 className="font-display font-bold text-lg mb-3">

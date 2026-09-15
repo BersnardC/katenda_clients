@@ -39,6 +39,7 @@ export function StoreForm({
   currencies,
   accountVerified,
   storeUuid,
+  onboarding = false,
 }: {
   value: StoreFormValue;
   onChange: (v: StoreFormValue) => void;
@@ -46,6 +47,7 @@ export function StoreForm({
   currencies: Currency[];
   accountVerified: boolean;
   storeUuid?: string;
+  onboarding?: boolean;
 }) {
   const { t } = useI18n();
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
@@ -303,100 +305,104 @@ export function StoreForm({
         </div>
       </Card>
 
-      <Card title={t("stores.currency")}>
-        <SearchSelect
-          value={value.currencyId ? String(value.currencyId) : null}
-          onChange={(v) => set({ currencyId: v ? Number(v) : null })}
-          options={currencyOptions}
-          placeholder={t("stores.currencyPlaceholder")}
-          searchPlaceholder={t("stores.search")}
-          emptyLabel={t("common.empty")}
-        />
-        <SearchSelect
-          value={value.currencySecondaryId ? String(value.currencySecondaryId) : null}
-          onChange={(v) => set({ currencySecondaryId: v ? Number(v) : null })}
-          options={currencyOptions}
-          placeholder={t("stores.currencySecondaryPlaceholder")}
-          searchPlaceholder={t("stores.search")}
-          emptyLabel={t("common.empty")}
-          allowClear
-          clearLabel={t("stores.currencyNone")}
-        />
-      </Card>
-
-      <Card title={t("stores.reputation")}>
-        <button
-          type="button"
-          className="w-full flex items-center justify-between gap-3 px-4 h-14 rounded-2xl bg-surface border border-border"
-        >
-          <span className="flex items-center gap-2.5 text-sm font-medium">
-            <BadgeCheck
-              className="size-5"
-              style={{ color: accountVerified ? accent : undefined }}
+      {!onboarding && (
+        <>
+          <Card title={t("stores.currency")}>
+            <SearchSelect
+              value={value.currencyId ? String(value.currencyId) : null}
+              onChange={(v) => set({ currencyId: v ? Number(v) : null })}
+              options={currencyOptions}
+              placeholder={t("stores.currencyPlaceholder")}
+              searchPlaceholder={t("stores.search")}
+              emptyLabel={t("common.empty")}
             />
-            {t("stores.verified")}
-            <span className="text-xs text-muted-foreground font-normal">
-              {accountVerified ? t("stores.verifiedYes") : t("stores.verifiedNo")}
-            </span>
-          </span>
-          <span
-            className={`relative w-11 h-6 rounded-full transition ${accountVerified ? "" : "bg-muted"}`}
-            style={accountVerified ? { backgroundColor: accent } : undefined}
-          >
-            <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${accountVerified ? "left-[22px]" : "left-0.5"}`}
+            <SearchSelect
+              value={value.currencySecondaryId ? String(value.currencySecondaryId) : null}
+              onChange={(v) => set({ currencySecondaryId: v ? Number(v) : null })}
+              options={currencyOptions}
+              placeholder={t("stores.currencySecondaryPlaceholder")}
+              searchPlaceholder={t("stores.search")}
+              emptyLabel={t("common.empty")}
+              allowClear
+              clearLabel={t("stores.currencyNone")}
             />
-          </span>
-        </button>
+          </Card>
 
-        <Field label={`${t("stores.rating")} — ${value.rating.toFixed(1)}`}>
-          <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
-            <div className="flex items-center gap-0.5 shrink-0">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star
-                  key={i}
-                  className="size-4"
-                  style={{ color: accent }}
-                  fill={i <= Math.round(value.rating) ? accent : "transparent"}
-                  strokeWidth={1.75}
+          <Card title={t("stores.reputation")}>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-3 px-4 h-14 rounded-2xl bg-surface border border-border"
+            >
+              <span className="flex items-center gap-2.5 text-sm font-medium">
+                <BadgeCheck
+                  className="size-5"
+                  style={{ color: accountVerified ? accent : undefined }}
                 />
-              ))}
+                {t("stores.verified")}
+                <span className="text-xs text-muted-foreground font-normal">
+                  {accountVerified ? t("stores.verifiedYes") : t("stores.verifiedNo")}
+                </span>
+              </span>
+              <span
+                className={`relative w-11 h-6 rounded-full transition ${accountVerified ? "" : "bg-muted"}`}
+                style={accountVerified ? { backgroundColor: accent } : undefined}
+              >
+                <span
+                  className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${accountVerified ? "left-[22px]" : "left-0.5"}`}
+                />
+              </span>
+            </button>
+
+            <Field label={`${t("stores.rating")} — ${value.rating.toFixed(1)}`}>
+              <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      className="size-4"
+                      style={{ color: accent }}
+                      fill={i <= Math.round(value.rating) ? accent : "transparent"}
+                      strokeWidth={1.75}
+                    />
+                  ))}
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={0.1}
+                  value={value.rating}
+                  onChange={(e) => set({ rating: Number(e.target.value) })}
+                  className="flex-1 accent-current"
+                  style={{ color: accent }}
+                  aria-label={t("stores.rating")}
+                />
+              </div>
+            </Field>
+
+            <Field label={t("stores.reviewsCount")}>
+              <input
+                type="number"
+                min={0}
+                max={999999}
+                value={value.reviewsCount}
+                onChange={(e) => set({ reviewsCount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                className={`${inputCls} tabular-nums`}
+              />
+            </Field>
+          </Card>
+
+          <Card title={t("stores.status")}>
+            <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
+              <span className="flex-1 font-medium text-sm">{t("stores.active")}</span>
+              <Switch
+                checked={value.active}
+                onCheckedChange={(active) => set({ active })}
+              />
             </div>
-            <input
-              type="range"
-              min={1}
-              max={5}
-              step={0.1}
-              value={value.rating}
-              onChange={(e) => set({ rating: Number(e.target.value) })}
-              className="flex-1 accent-current"
-              style={{ color: accent }}
-              aria-label={t("stores.rating")}
-            />
-          </div>
-        </Field>
-
-        <Field label={t("stores.reviewsCount")}>
-          <input
-            type="number"
-            min={0}
-            max={999999}
-            value={value.reviewsCount}
-            onChange={(e) => set({ reviewsCount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
-            className={`${inputCls} tabular-nums`}
-          />
-        </Field>
-      </Card>
-
-      <Card title={t("stores.status")}>
-        <div className="flex items-center gap-3 px-4 h-14 rounded-2xl bg-surface border border-border">
-          <span className="flex-1 font-medium text-sm">{t("stores.active")}</span>
-          <Switch
-            checked={value.active}
-            onCheckedChange={(active) => set({ active })}
-          />
-        </div>
-      </Card>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

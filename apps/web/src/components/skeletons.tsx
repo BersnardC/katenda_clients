@@ -148,3 +148,15 @@ export function SkeletonStoreForm() {
     </div>
   );
 }
+
+export function SkeletonOnboardingBanner() {
+  return (
+    <div className="mx-5 mt-4 mb-2 flex items-center gap-3 p-4 rounded-2xl bg-card border border-border">
+      <div className="size-11 rounded-xl bg-muted animate-pulse shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+        <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
