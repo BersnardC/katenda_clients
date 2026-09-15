@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -7,11 +7,9 @@ import { useApp } from "@/contexts/AppContext";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
-import { countryService } from "@/services/countryService";
-import { currencyService } from "@/services/currencyService";
 import { accountService } from "@/services/accountService";
 import { slugify, dataUrlToFile } from "@/lib/utils";
-import type { Country, Currency, Store } from "@/types/models";
+import type { Store } from "@/types/models";
 
 const parsePhone = (phone: string | null) => {
   if (!phone) return { code: "", number: "" };
@@ -47,35 +45,12 @@ const errMsg = (e: unknown, fallback: string) =>
 
 export function Component() {
   const { t } = useI18n();
-  const { account, refetchAccount } = useApp();
-  const [store, setStore] = useState<Store | null>(null);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const { account, refetchAccount, stores, storesLoading, countries, currencies, refetchStores } = useApp();
+  const store = stores[0] ?? null;
   const [form, setForm] = useState<StoreFormValue | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const load = () => {
-    Promise.all([
-      storeService.list(),
-      countryService.list(),
-      currencyService.list(),
-    ])
-      .then(([s, c, cu]) => {
-        const st = s.data?.[0] ?? null;
-        setStore(st);
-        setCountries(c.countries ?? []);
-        setCurrencies(cu.currencies ?? []);
-        if (st) setForm(storeToForm(st, account));
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
+  const isLoading = storesLoading || account === null;
   const formValue = form ?? (store ? storeToForm(store, account) : null);
 
   const submit = async (e: React.FormEvent) => {
@@ -119,7 +94,7 @@ export function Component() {
         await storeService.removeBanner(store.uuid);
       }
       toast.success(t("stores.updated"));
-      load();
+      refetchStores();
     } catch (err) {
       toast.error(errMsg(err, t("stores.updateError")));
     } finally {
@@ -158,7 +133,7 @@ export function Component() {
       </header>
 
       <div className="px-5 mt-2 space-y-4 pb-4">
-        {loading ? (
+        {isLoading ? (
           <SkeletonStoreForm />
         ) : store && account && formValue ? (
           <form onSubmit={submit} className="space-y-4">
@@ -181,7 +156,7 @@ export function Component() {
             </button>
           </form>
         ) : (
-          <CreateStoreFallback onCreated={load} />
+          <CreateStoreFallback onCreated={refetchStores} />
         )}
       </div>
     </>

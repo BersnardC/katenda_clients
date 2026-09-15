@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,8 +21,6 @@ import { slugify, dataUrlToFile } from "@/lib/utils";
 import { StoreForm, type StoreFormValue } from "@/components/stores/StoreForm";
 import { SkeletonStoreForm } from "@/components/skeletons";
 import { storeService } from "@/services/storeService";
-import { countryService } from "@/services/countryService";
-import { currencyService } from "@/services/currencyService";
 import { accountService } from "@/services/accountService";
 import { categoryService } from "@/services/categoryService";
 import { productService } from "@/services/productService";
@@ -77,13 +75,10 @@ const inputClass =
 export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { account, refetchAccount } = useApp();
+  const { account, refetchAccount, stores, storesLoading, countries, currencies } = useApp();
+  const store = stores[0] ?? null;
   const [step, setStep] = useState<Step>(1);
-  const [store, setStore] = useState<Store | null>(null);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [form, setForm] = useState<StoreFormValue | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<QuickCategory[]>([
     { name: "" },
@@ -93,23 +88,6 @@ export function Component() {
   const [products, setProducts] = useState<QuickProduct[]>([
     { name: "", category: "", price: "", stock: "" },
   ]);
-
-  useEffect(() => {
-    Promise.all([
-      storeService.list(),
-      countryService.list(),
-      currencyService.list(),
-    ])
-      .then(([s, c, cu]) => {
-        const st = s.data?.[0] ?? null;
-        setStore(st);
-        setCountries(c.countries ?? []);
-        setCurrencies(cu.currencies ?? []);
-        if (st) setForm(storeToForm(st, account));
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, []);
 
   const formValue = form ?? (store ? storeToForm(store, account) : null);
 
@@ -242,7 +220,7 @@ export function Component() {
   const removeProduct = (index: number) =>
     setProducts(products.filter((_, i) => i !== index));
 
-  if (loading) {
+  if (storesLoading) {
     return (
       <>
         <header className="px-5 pt-6 pb-3 flex items-center gap-3">
