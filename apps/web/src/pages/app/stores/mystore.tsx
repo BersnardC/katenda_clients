@@ -143,7 +143,7 @@ export function Component() {
         </div>
         {store && (
           <Link
-            to="/stores/preview"
+            to="/mystore/preview"
             className="flex shrink-0 items-center gap-2 px-3 h-10 rounded-xl border border-border bg-card text-sm font-semibold"
           >
             <ExternalLink className="size-4" /> {t("stores.preview")}

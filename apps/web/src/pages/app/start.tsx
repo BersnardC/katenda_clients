@@ -613,7 +613,7 @@ function CompleteStep() {
       </p>
       <div className="mt-7 w-full space-y-3">
         <Link
-          to="/stores"
+          to="/mystore"
           className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl gradient-brand shadow-pop text-primary-foreground font-semibold"
         >
           <StoreIcon className="size-4" /> {t("onboarding.goToStore")}{" "}

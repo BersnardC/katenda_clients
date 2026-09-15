@@ -170,7 +170,7 @@ export function Component() {
           label={t("wa.title")}
         />
         <LinkRow
-          to="/admin"
+          to="/metrics"
           icon={<BarChart3 className="size-5" />}
           label={t("admin.title")}
         />

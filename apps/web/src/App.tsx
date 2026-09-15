@@ -121,11 +121,11 @@ const router = createBrowserRouter([
             path: "roles/:uuid/edit",
             lazy: () => import("./pages/app/roles/edit"),
           },
-          { path: "stores", lazy: () => import("./pages/app/stores/mystore") },
+          { path: "mystore", lazy: () => import("./pages/app/stores/mystore") },
           { path: "start", lazy: () => import("./pages/app/start") },
           { path: "whatsapp", lazy: () => import("./pages/app/whatsapp") },
           { path: "payments", lazy: () => import("./pages/app/payments") },
-          { path: "admin", lazy: () => import("./pages/app/admin") },
+          { path: "metrics", lazy: () => import("./pages/app/admin") },
           { path: "orders", lazy: () => import("./pages/app/orders/index") },
           {
             path: "orders/:uuid",
@@ -163,7 +163,7 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "stores/preview",
+        path: "mystore/preview",
         element: (
           <RequireAuth>
             <Outlet />

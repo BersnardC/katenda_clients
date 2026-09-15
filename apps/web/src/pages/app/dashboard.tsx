@@ -122,7 +122,7 @@ export function Component() {
             label={t("dashboard.products")}
           />
           <Quick
-            to="/stores"
+            to="/mystore"
             icon={<StoreIcon />}
             label={t("nav.mystore")}
           />
@@ -131,7 +131,7 @@ export function Component() {
             icon={<MessageCircle />}
             label={t("wa.title")}
           />
-          <Quick to="/admin" icon={<BarChart3 />} label={t("admin.title")} />
+          <Quick to="/metrics" icon={<BarChart3 />} label={t("admin.title")} />
           <Quick to="/payments" icon={<CreditCard />} label={t("pay.title")} />
           <Quick
             to="/pay-suscripcion"
@@ -146,7 +146,7 @@ export function Component() {
           <h2 className="font-display font-bold text-lg">
             {t("home.myStores")} · {totalStores}
           </h2>
-          <Link to="/stores" className="text-sm text-primary font-medium">
+          <Link to="/mystore" className="text-sm text-primary font-medium">
             {t("home.viewAll")}
           </Link>
         </div>

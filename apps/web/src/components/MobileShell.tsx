@@ -65,7 +65,7 @@ function useNavItems() {
     { to: "/dashboard", icon: Home, label: t("nav.home") },
     { to: "/products", icon: Package, label: t("nav.inventory")},
     { to: "/products/new", icon: PlusCircle, label: t("nav.publish"), accent: true, mobileOnly: true },
-    { to: "/stores", icon: Building2, label: t("nav.mystore"), desktopOnly: true },
+    { to: "/mystore", icon: Building2, label: t("nav.mystore"), desktopOnly: true },
     { to: "/categories", icon: Tags, label: t("nav.categories"), desktopOnly: true },
     { to: "/orders", icon: ClipboardList, label: t("nav.orders") },
     { to: "/customers", icon: UserRound, label: t("nav.customers"), desktopOnly: true },

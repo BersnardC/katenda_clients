@@ -85,7 +85,7 @@ export function Component() {
         <ShoppingBag className="size-10 mx-auto mb-3 opacity-50" />
         <p className="font-semibold">{t("storefront.inactive")}</p>
         <Link
-          to="/stores"
+          to="/mystore"
           className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold"
         >
           {t("storefront.edit")}
@@ -118,7 +118,7 @@ export function Component() {
           )}
         </div>
         <Link
-          to="/stores"
+          to="/mystore"
           className="absolute top-4 left-4 flex items-center gap-2 px-3 h-10 rounded-full bg-background/85 backdrop-blur border border-border text-sm font-medium"
         >
           <ArrowLeft className="size-4" /> {t("storefront.edit")}
@@ -254,7 +254,7 @@ export function Component() {
             <div className="py-20 text-center text-muted-foreground">
               <p>{t("storefront.loadError")}</p>
               <Link
-                to="/stores"
+                to="/mystore"
                 className="inline-block mt-4 px-4 h-10 leading-10 rounded-xl bg-card border border-border text-sm font-semibold"
               >
                 {t("storefront.edit")}
