@@ -3,21 +3,25 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Bell,
+  Copy,
+  Crown,
+  CreditCard,
   Eye,
-  ShoppingBag,
+  ExternalLink,
+  MessageCircle,
   Package,
   Plus,
   BarChart3,
   Rocket,
+  ShoppingBag,
   Store as StoreIcon,
-  MessageCircle,
-  CreditCard,
-  Crown,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApp } from "@/contexts/AppContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useI18n } from "@/lib/i18n";
+import { STORE_PUBLIC_URL } from "@/lib/store";
 import { storeBrand } from "@/lib/storeBrand";
 import { accountService } from "@/services/accountService";
 import { AccountSwitcherChip } from "@/components/accounts/AccountSwitcher";
@@ -27,17 +31,22 @@ export function Component() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { account, stores: contextStores, storesLoading } = useApp();
-  const { stores, totalStores, storeProducts, loading } = useDashboardStats(contextStores, storesLoading);
-  const [stats, setStats] = useState<AccountStats | null>(null);
+  const { stores, totalStores, loading } = useDashboardStats(contextStores, storesLoading);
+  const [stats, setStats] = useState<Partial<AccountStats> | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     accountService
-      .stats()
+      .stats("visits_count,orders_count,products_count")
       .then((res) => setStats(res.stats))
       .catch(() => undefined)
       .finally(() => setStatsLoading(false));
   }, []);
+
+  const copyStoreUrl = (slug: string) => {
+    navigator.clipboard.writeText(STORE_PUBLIC_URL(slug));
+    toast.success(t("common.copied"));
+  };
 
   return (
     <>
@@ -153,23 +162,39 @@ export function Component() {
           ) : (
             stores.map((s) => {
               const brand = storeBrand(s.slug);
-              const count = storeProducts[s.uuid] ?? 0;
+              const storeUrl = STORE_PUBLIC_URL(s.slug);
               return (
                 <div
                   key={s.uuid}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border shadow-soft"
                 >
                   <div
-                    className="size-14 rounded-2xl grid place-items-center text-2xl"
+                    className="size-14 rounded-2xl grid place-items-center text-2xl shrink-0"
                     style={{ backgroundColor: brand.color + "33" }}
                   >
                     <span>{brand.emoji}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {count} {t("dashboard.products").toLowerCase()}
+                    <p className="text-xs text-muted-foreground truncate">
+                      {storeUrl}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => window.open(storeUrl, "_blank")}
+                      className="size-9 grid place-items-center rounded-xl hover:bg-surface text-muted-foreground hover:text-foreground transition cursor-pointer"
+                      aria-label={t("dashboard.visitStore")}
+                    >
+                      <ExternalLink className="size-4" />
+                    </button>
+                    <button
+                      onClick={() => copyStoreUrl(s.slug)}
+                      className="size-9 grid place-items-center rounded-xl hover:bg-surface text-muted-foreground hover:text-foreground transition cursor-pointer"
+                      aria-label={t("common.copy")}
+                    >
+                      <Copy className="size-4" />
+                    </button>
                   </div>
                 </div>
               );

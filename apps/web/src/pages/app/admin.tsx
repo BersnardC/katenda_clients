@@ -22,7 +22,7 @@ const money = (v: number) => `$${v.toFixed(2)}`;
 
 export function Component() {
   const { t } = useI18n();
-  const [stats, setStats] = useState<AccountStats | null>(null);
+  const [stats, setStats] = useState<Partial<AccountStats> | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<Range>("7d");
   const [series, setSeries] = useState<RevenuePoint[]>([]);

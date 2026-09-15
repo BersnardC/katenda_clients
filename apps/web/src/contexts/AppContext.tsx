@@ -91,7 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!getToken()) return;
     let alive = true;
     storeService
-      .list({ addons: "products_count" })
+      .list()
       .then((res) => {
         if (alive) setStores(res.data ?? []);
       })

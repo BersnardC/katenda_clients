@@ -21,8 +21,11 @@ export const accountService = {
     api.post<{ subscription: Subscription }>("/account/subscription", {
       plan_id: planId,
     }),
-  // GET /account/stats -> { stats }
-  stats: () => api.get<{ stats: AccountStats }>("/account/stats"),
+  // GET /account/stats?metrics= -> { stats }
+  stats: (metrics?: string) =>
+    api.get<{ stats: Partial<AccountStats> }>(
+      `/account/stats${metrics ? `?metrics=${metrics}` : ""}`,
+    ),
   // GET /account/stats/revenue?range= -> { revenue_series }
   statsRevenue: (range: string) =>
     api.get<{ revenue_series: RevenuePoint[] }>(
