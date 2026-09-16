@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User as UserIcon } from "lucide-react";
+import { Mail, Lock, User as UserIcon, Store } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,7 @@ export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -34,6 +35,7 @@ export function Component() {
         email,
         password,
         password_confirmation: passwordConfirmation,
+        ...(storeName ? { store_name: storeName } : {}),
       });
       navigate("/dashboard");
     } catch {
@@ -68,6 +70,12 @@ export function Component() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+        />
+        <Field
+          icon={<Store className="size-5" />}
+          placeholder={t("auth.storeName")}
+          value={storeName}
+          onChange={(e) => setStoreName(e.target.value)}
         />
         <Field
           icon={<Lock className="size-5" />}
