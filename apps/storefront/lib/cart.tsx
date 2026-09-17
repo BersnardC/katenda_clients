@@ -10,6 +10,9 @@ import {
   type ReactNode,
 } from "react";
 
+import { getClientSlug } from "./clientSlug";
+import { fetchCartSync } from "@/services/catalogClient";
+
 export interface CartLine {
   id: string;
   name: string;
@@ -59,6 +62,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setHydrated(true);
   }, []);
+
+  // Sync una vez al hidratar: solo si hay items en el carrito.
+  // Actualiza precio/stock desde la DB (sin cache).
+  useEffect(() => {
+    if (!hydrated || lines.length === 0) return;
+    const slug = getClientSlug();
+    if (!slug) return;
+    fetchCartSync(
+      slug,
+      lines.map((l) => l.id),
+    ).then((products) => {
+      if (products.length > 0) {
+        syncFromCatalog(products.map((p) => ({ id: p.uuid, price: p.price, stock: p.stock })));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;

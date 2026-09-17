@@ -64,6 +64,7 @@ Navegación SPA con <Link> (sin recargar); el RSC lleva la cookie → mismo slug
 | `GET /s/{slug}/products?per_page=N` | `{ products: RawPaginated<Product> }` — items con `media` + `category` |
 | `GET /s/{slug}/categories` | `{ categories: Category[] }` |
 | `GET /s/{slug}/products/{productUuid}` | `{ product }` — con `media` + `category` + `store` |
+| `POST /s/{slug}/products/cart-sync` | `{ products: [{ uuid, price, stock }] }` — sync de precios/stock del carrito, DB directa sin cache |
 
 ### Cliente y pedidos (auth customers)
 
@@ -116,7 +117,7 @@ lib/
   clientSlug.ts         # getClientSlug (cookie katenda.slug) — client-only
   clientApi.ts          # fetch client-side con Bearer del customer (register/orders)
   customerAuth.tsx      # CustomerProvider + login/register/logout/refresh (localStorage katenda.customer*)
-  cart.tsx              # carrito client (localStorage "katenda.cart", topeado a stock)
+  cart.tsx              # carrito client (localStorage "katenda.cart", topeado a stock; sync automático al hidrar vía POST /s/{slug}/products/cart-sync)
   i18n.tsx              # dict es/en flat + useI18n (claves store.*, product.*, cuenta.*, order.*, notFound.*)
   theme.tsx             # dark mode, DEFAULT LIGHT
   whatsapp.ts           # renderWhatsappMessage / normalizeWhatsappSettings / whatsappLink

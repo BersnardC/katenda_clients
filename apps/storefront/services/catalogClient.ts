@@ -58,3 +58,19 @@ export async function fetchFreshProductStatus(
     return null;
   }
 }
+
+// Sync de precios/stock del carrito: recibe UUIDs y devuelve precio vigente.
+// Sin cache, DB directa. POST requests no se cachean por el navegador.
+export async function fetchCartSync(
+  slug: string,
+  uuids: string[],
+): Promise<Array<{ uuid: string; price: number; stock: number }>> {
+  try {
+    const res = await clientApi.post<{
+      products: Array<{ uuid: string; price: number; stock: number }>;
+    }>(`/s/${slug}/products/cart-sync`, { uuids });
+    return res.products ?? [];
+  } catch {
+    return [];
+  }
+}
