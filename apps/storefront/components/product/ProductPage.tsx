@@ -29,7 +29,7 @@ import { VisitTracker } from "@/components/storefront/VisitTracker";
 import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { getClientSlug } from "@/lib/clientSlug";
-import { fetchFreshProduct } from "@/services/catalogClient";
+import { fetchFreshProductStatus } from "@/services/catalogClient";
 import type { Product, Store, StorefrontAccount } from "@/types/models";
 
 interface ProductPageProps {
@@ -62,10 +62,17 @@ export function ProductPage({
     if (takeOpenCartOnReturn()) setCartOpen(true);
   }, []);
 
-  // Producto "vivo": detalle refrescado sin recargar (precio/stock/estado).
-  const [liveProduct, setLiveProduct] = useState<Product | null>(null);
+  // Producto "vivo": precio y stock siempre frescos via realtime-status.
+  const [liveStatus, setLiveStatus] = useState<{
+    price: string;
+    stock: number;
+    in_stock: boolean;
+  } | null>(null);
 
-  const p = liveProduct ?? product;
+  const p = {
+    ...product,
+    ...(liveStatus ?? {}),
+  } as Product;
 
   const accent = store.accent_color ?? ACCENT_FALLBACK;
   const primaryCurrency = store.currency?.code ?? "USD";
@@ -114,19 +121,19 @@ export function ProductPage({
     setTimeout(() => setAdded(false), 1600);
   };
 
-  // Refresco en caliente del detalle (montaje + volver a la pestaña): si el
-  // comercio cambió precio/stock/estado, se refleja sin recargar la página.
-  const loadFreshProduct = useCallback(async () => {
+  // Refresco en caliente del precio/stock (montaje + volver a la pestaña):
+  // si el comercio cambió precio/stock, se refleja sin recargar la página.
+  const loadFreshStatus = useCallback(async () => {
     const slug = getClientSlug();
     if (!slug) return null;
-    return fetchFreshProduct(slug, product.uuid);
+    return fetchFreshProductStatus(slug, product.uuid);
   }, [product.uuid]);
 
   useAutoRefresh({
     key: `product:${getClientSlug() ?? ""}:${product.uuid}`,
-    load: loadFreshProduct,
+    load: loadFreshStatus,
     onData: (data) => {
-      if (data && data.uuid === product.uuid) setLiveProduct(data);
+      if (data) setLiveStatus(data);
     },
   });
 

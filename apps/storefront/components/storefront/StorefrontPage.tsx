@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -27,12 +27,6 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProductImg } from "@/components/common/ProductImg";
 import { VisitTracker } from "@/components/storefront/VisitTracker";
 import { takeOpenCartOnReturn } from "@/lib/checkoutIntent";
-import { useAutoRefresh } from "@/lib/useAutoRefresh";
-import { getClientSlug } from "@/lib/clientSlug";
-import {
-  fetchFreshCategories,
-  fetchFreshProducts,
-} from "@/services/catalogClient";
 import type {
   Category,
   Product,
@@ -61,18 +55,13 @@ export function StorefrontPage({
   categories,
 }: StorefrontPageProps) {
   const { t } = useI18n();
-  const { count, total, add, syncFromCatalog } = useCart();
+  const { count, total, add } = useCart();
   const { customer: customerAccount } = useCustomerAuth();
   const isLoggedIn = Boolean(customerAccount);
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Catálogo "vivo": refrescado sin recargar cuando el comercio publica.
-  const [liveCatalog, setLiveCatalog] = useState<{
-    products: Product[];
-    categories: Category[];
-  } | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const wasMenuOpen = useRef(false);
 
@@ -98,42 +87,8 @@ export function StorefrontPage({
     "";
   const verified = Boolean(account?.verified);
 
-  // Fase 1 — frescura del catálogo: al montar y al volver a la pestaña
-  // (oculta >10 s) se refresca en caliente (precio/stock/estado/categorías)
-  // sin que el cliente recargue. El SSR cacheado sigue dando el 1er pintado.
-  const loadFreshCatalog = useCallback(async () => {
-    const slug = getClientSlug();
-    if (!slug) return null;
-    const [freshProducts, freshCategories] = await Promise.all([
-      fetchFreshProducts(slug),
-      fetchFreshCategories(slug),
-    ]);
-    return { products: freshProducts, categories: freshCategories };
-  }, []);
-
-  useAutoRefresh({
-    key: `catalog:${getClientSlug() ?? ""}`,
-    load: loadFreshCatalog,
-    onData: (data) => {
-      if (data) setLiveCatalog(data);
-    },
-  });
-
-  // Reconciliación del carrito: si el comercio cambió un precio/stock y el
-  // producto ya está en el carrito, la línea se alinea con el catálogo.
-  useEffect(() => {
-    if (!liveCatalog) return;
-    syncFromCatalog(
-      liveCatalog.products.map((p) => ({
-        id: p.uuid,
-        price: Number(p.price),
-        stock: p.stock,
-      })),
-    );
-  }, [liveCatalog, syncFromCatalog]);
-
-  const shownProducts = liveCatalog?.products ?? products;
-  const shownCategories = liveCatalog?.categories ?? categories;
+  const shownProducts = products;
+  const shownCategories = categories;
 
   const activeCategories = shownCategories.filter((c) => c.status === 1);
 

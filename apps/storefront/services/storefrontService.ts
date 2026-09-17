@@ -3,21 +3,37 @@ import type { Category, Product, Storefront } from "@/types/models";
 import type { RawPaginated } from "@/types/pagination";
 
 export async function getStore(slug: string) {
-  return apiFetch<Storefront>(`/s/${slug}`);
+  return apiFetch<Storefront>(`/s/${slug}`, {
+    revalidate: 86400, // 24h
+    tag: `store:${slug}`,
+  });
 }
 
 export async function getStoreProducts(slug: string) {
   return apiFetch<{ products: RawPaginated<Product> }>(
     `/s/${slug}/products?per_page=50`,
+    {
+      revalidate: 3600, // 1h
+      tag: `products:${slug}`,
+    },
   );
 }
 
 export async function getStoreCategories(slug: string) {
-  return apiFetch<{ categories: Category[] }>(`/s/${slug}/categories`);
+  return apiFetch<{ categories: Category[] }>(`/s/${slug}/categories`, {
+    revalidate: 86400, // 24h
+    tag: `categories:${slug}`,
+  });
 }
 
 export async function getProduct(slug: string, productUuid: string) {
-  return apiFetch<{ product: Product }>(`/s/${slug}/products/${productUuid}`);
+  return apiFetch<{ product: Product }>(
+    `/s/${slug}/products/${productUuid}`,
+    {
+      revalidate: 86400, // 24h
+      tag: `product:${slug}:${productUuid}`,
+    },
+  );
 }
 
 // Paginator vacío para fallbacks (products/categories no disponibles).

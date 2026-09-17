@@ -38,3 +38,23 @@ export async function fetchFreshProduct(
     return null;
   }
 }
+
+export interface ProductStatus {
+  price: string;
+  stock: number;
+  in_stock: boolean;
+}
+
+// Endpoint sin cache: siempre consulta stock y precio frescos de la DB.
+export async function fetchFreshProductStatus(
+  slug: string,
+  uuid: string,
+): Promise<ProductStatus | null> {
+  try {
+    return await clientApi.getFresh<ProductStatus>(
+      `/s/${slug}/products/${uuid}/realtime-status`,
+    );
+  } catch {
+    return null;
+  }
+}

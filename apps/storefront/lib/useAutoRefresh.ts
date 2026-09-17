@@ -35,7 +35,7 @@ export function useAutoRefresh<T>({
   load,
   onData,
   enabled = true,
-  minIntervalMs = 15_000,
+  minIntervalMs = 8_000,
   hiddenThresholdMs = 10_000,
   initialDelayMs = 600,
 }: UseAutoRefreshOptions<T>) {
