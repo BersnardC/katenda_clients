@@ -466,6 +466,12 @@ export interface LowStockItem {
   stock: number;
 }
 
+export interface ProductView {
+  uuid: string;
+  name: string;
+  views: number;
+}
+
 export interface RecentOrder {
   uuid: string;
   code: string;
@@ -481,6 +487,7 @@ export interface AccountStats {
   customers_count: number;
   products_count: number;
   revenue: number;
+  product_views: ProductView[];
   sales_by_category: CategorySale[];
   low_stock: LowStockItem[];
   recent_orders: RecentOrder[];

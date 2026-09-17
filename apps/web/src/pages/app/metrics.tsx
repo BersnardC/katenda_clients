@@ -165,6 +165,32 @@ export function Component() {
         </section>
       )}
 
+      {(stats?.product_views ?? []).length > 0 && (
+        <section className="px-5 mt-5">
+          <div className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+            <p className="font-display font-bold text-lg mb-3">
+              {t("metrics.topProducts")}
+            </p>
+            <ul className="space-y-2">
+              {(stats?.product_views ?? []).map((pv, i) => (
+                <li
+                  key={pv.uuid}
+                  className="flex items-center gap-3 text-sm"
+                >
+                  <span className="size-7 rounded-lg bg-primary/15 text-primary grid place-items-center font-bold text-xs">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 truncate">{pv.name}</span>
+                  <span className="font-semibold text-muted-foreground">
+                    {pv.views}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       <section className="px-5 mt-5 mb-2">
         <h2 className="font-display font-bold text-lg mb-3">
           {t("metrics.recent")}
