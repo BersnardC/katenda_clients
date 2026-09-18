@@ -41,6 +41,21 @@ export async function fetchOrder(
   return res.order;
 }
 
+export interface OrderStatusPayload {
+  status: string;
+  payment_status: string | null;
+  rejections_count: number;
+}
+
+export async function fetchOrderStatus(
+  slug: string,
+  uuid: string,
+): Promise<OrderStatusPayload> {
+  return clientApi.get<OrderStatusPayload>(
+    `/s/${slug}/orders/${uuid}/status`,
+  );
+}
+
 export interface ReportPaymentInput {
   method: "pago_movil" | "transferencia";
   reference: string;

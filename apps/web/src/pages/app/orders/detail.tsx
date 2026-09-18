@@ -23,6 +23,7 @@ const errMsg = (e: unknown, fallback: string) =>
 
 const STATUS_KEYS: Record<string, Key> = {
   pending: "orders.statusPending",
+  payment_reported: "orders.statusPaymentReported",
   confirmed: "orders.statusConfirmed",
   preparing: "orders.statusPreparing",
   shipped: "orders.statusShipped",

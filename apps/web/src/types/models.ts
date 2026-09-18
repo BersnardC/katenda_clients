@@ -302,6 +302,7 @@ export interface Subscription {
 
 export type OrderStatus =
   | "pending"
+  | "payment_reported"
   | "confirmed"
   | "preparing"
   | "shipped"

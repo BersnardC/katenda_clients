@@ -4,6 +4,7 @@ import type { Key } from "@/lib/i18n";
 
 export const ORDER_STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",
+  payment_reported: "#f59e0b",
   confirmed: "#3b82f6",
   preparing: "#8b5cf6",
   shipped: "#06b6d4",
@@ -15,6 +16,8 @@ export function orderStatusKey(status: string): Key {
   switch (status) {
     case "pending":
       return "order.status.pending";
+    case "payment_reported":
+      return "order.status.payment_reported";
     case "confirmed":
       return "order.status.confirmed";
     case "preparing":
@@ -40,13 +43,12 @@ export function payState(
   return "pending";
 }
 
-// El diseño solo permite pagar pedidos confirmados/preparando que no estén
-// ya verificados.
+// El cliente puede pagar pedidos pendientes, con pago reportado, confirmados o en preparación.
 export function isPayableOrder(
   orderStatus: string,
   paymentStatus?: string | null,
 ): boolean {
-  const payable = ["confirmed", "preparing"].includes(orderStatus);
+  const payable = ["pending", "payment_reported", "confirmed", "preparing"].includes(orderStatus);
   return payable && payState(paymentStatus) !== "approved";
 }
 
@@ -58,4 +60,9 @@ export function canMarkReceived(status: string): boolean {
 // La descarga/impresión del pedido está disponible desde que va en camino.
 export function canDownloadOrder(status: string): boolean {
   return status === "shipped" || status === "delivered";
+}
+
+// Estados donde el pedido puede cambiar pronto (polling habilitado).
+export function isPollableOrder(status: string): boolean {
+  return ["pending", "payment_reported", "confirmed", "preparing"].includes(status);
 }

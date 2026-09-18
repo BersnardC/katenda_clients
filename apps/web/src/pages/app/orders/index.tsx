@@ -90,6 +90,16 @@ export function Component() {
 
   const statusChips = ["all", ...ORDER_STATUSES.map((s) => s.value)] as const;
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: "orders.statusPending",
+  payment_reported: "orders.statusPaymentReported",
+  confirmed: "orders.statusConfirmed",
+  preparing: "orders.statusPreparing",
+  shipped: "orders.statusShipped",
+  delivered: "orders.statusDelivered",
+  cancelled: "orders.statusCancelled",
+};
+
   return (
     <>
       <header className="px-5 pt-6 pb-3 flex items-center gap-3">
@@ -133,7 +143,7 @@ export function Component() {
                 s === "all"
                   ? t("orders.filterAll")
                   : (t as (k: string) => string)(
-                      `orders.status${cap(s)}`,
+                      STATUS_LABELS[s] ?? `orders.status${s}`,
                     )
               }
               color={s === "all" ? undefined : ORDER_STATUSES.find((x) => x.value === s)?.color}
@@ -247,4 +257,4 @@ function FilterChip({
   );
 }
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   Building2,
   Check,
+  CheckCircle,
+  Clock,
   Loader2,
   MapPin,
   MessageCircle,
@@ -16,6 +18,7 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  XCircle,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@katenda_clients/ui/dialog";
 import { useI18n, type Key } from "@/lib/i18n";
@@ -28,11 +31,13 @@ import {
   canDownloadOrder,
   canMarkReceived,
   isPayableOrder,
+  isPollableOrder,
   ORDER_STATUS_COLORS,
   orderStatusKey,
   payState,
 } from "@/lib/orders";
-import { fetchOrder, markOrderReceived, reportPayment } from "@/services/orderService";
+import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { fetchOrder, fetchOrderStatus, markOrderReceived, reportPayment } from "@/services/orderService";
 import type { CustomerOrder } from "@/lib/customerAuth";
 
 type TFunc = (k: Key, vars?: Record<string, string | number>) => string;
@@ -54,13 +59,50 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const [method, setMethod] = useState<Method>("pago_movil");
   const [success, setSuccess] = useState(false);
   const [receiving, setReceiving] = useState(false);
+  const prevStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetchOrder(slug, orderUuid)
-      .then(setOrder)
+      .then((o) => {
+        setOrder(o);
+        prevStatusRef.current = o.status;
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [slug, orderUuid]);
+
+  // Polling: refresco ligero cada 60s solo en estados activos.
+  useAutoRefresh({
+    key: `order-status:${slug}:${orderUuid}`,
+    enabled: !!order && isPollableOrder(order.status),
+    minIntervalMs: 60_000,
+    initialDelayMs: 60_000,
+    load: () => fetchOrderStatus(slug, orderUuid),
+    onData: (data) => {
+      setOrder((prev) => {
+        if (!prev) return prev;
+        // Detectar cambio de estado → toast informativo.
+        if (prev.status !== data.status) {
+          if (data.status === "confirmed") {
+            toast.success(t("order.paymentApproved"));
+          } else if (data.status === "cancelled" && data.rejections_count > 0) {
+            toast.error(t("order.paymentRejectedFinal"));
+          } else if (data.status === "pending" && prev.status === "payment_reported") {
+            toast.warning(t("order.paymentRejected"));
+          }
+        }
+        prevStatusRef.current = data.status;
+        return {
+          ...prev,
+          status: data.status,
+          rejections_count: data.rejections_count,
+          payment: prev.payment
+            ? { ...prev.payment, status: data.payment_status ?? prev.payment.status }
+            : prev.payment,
+        };
+      });
+    },
+  });
 
   if (loading) {
     return (
@@ -91,6 +133,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const payment = payState(order.payment?.status);
   const canPay = isPayableOrder(order.status, order.payment?.status);
   const invoiceReady = payment === "approved";
+  const isAwaitingApproval = order.status === "payment_reported";
+  const isRejectedPending = order.status === "pending" && order.rejections_count > 0;
 
   const report = async (
     e: React.FormEvent,
@@ -164,6 +208,59 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           {statusLabel}
         </span>
       </div>
+
+      {/* Banner de estado */}
+      {isAwaitingApproval && (
+        <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3 print:hidden">
+          <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-amber-800">
+              {t("order.waitingApproval")}
+            </p>
+            {order.rejections_count > 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                {t("order.rejectionsLeft", { count: order.rejections_count })}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isRejectedPending && (
+        <div className="mt-4 rounded-2xl bg-orange-50 border border-orange-200 p-4 flex items-start gap-3 print:hidden">
+          <XCircle className="size-5 text-orange-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-orange-800">
+              {t("order.paymentRejected")}
+            </p>
+            <p className="text-xs text-orange-600 mt-1">
+              {t("order.rejectionsLeft", { count: order.rejections_count })}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order.status === "confirmed" && (
+        <div className="mt-4 rounded-2xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-3 print:hidden">
+          <CheckCircle className="size-5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-blue-800">
+              {t("order.paymentApproved")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order.status === "cancelled" && order.rejections_count > 0 && (
+        <div className="mt-4 rounded-2xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 print:hidden">
+          <XCircle className="size-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-red-800">
+              {t("order.paymentRejectedFinal")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Ficha imprimible / factura */}
       <section
@@ -353,47 +450,63 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           <h2 className="font-display font-bold text-lg mb-3">
             {t("payment.payOrder")}
           </h2>
-          <div className="grid grid-cols-2 gap-2">
-            <MethodBtn
-              icon={<Smartphone className="size-5" />}
-              label={t("payment.method.pago_movil")}
-              active={method === "pago_movil"}
-              onClick={() => setMethod("pago_movil")}
-              accent={accent}
-            />
-            <MethodBtn
-              icon={<Building2 className="size-5" />}
-              label={t("payment.method.transferencia")}
-              active={method === "transferencia"}
-              onClick={() => setMethod("transferencia")}
-              accent={accent}
-            />
-          </div>
+          {isAwaitingApproval ? (
+            <div className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Clock className="size-5 shrink-0" />
+                <p>{t("order.waitingApproval")}</p>
+              </div>
+              {order.rejections_count > 0 && (
+                <p className="mt-2 text-xs text-orange-600">
+                  {t("order.rejectionsLeft", { count: order.rejections_count })}
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <MethodBtn
+                  icon={<Smartphone className="size-5" />}
+                  label={t("payment.method.pago_movil")}
+                  active={method === "pago_movil"}
+                  onClick={() => setMethod("pago_movil")}
+                  accent={accent}
+                />
+                <MethodBtn
+                  icon={<Building2 className="size-5" />}
+                  label={t("payment.method.transferencia")}
+                  active={method === "transferencia"}
+                  onClick={() => setMethod("transferencia")}
+                  accent={accent}
+                />
+              </div>
 
-          <div className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft">
-            {method === "pago_movil" ? (
-              <MovilForm
-                total={Number(order.total)}
-                onSubmit={report}
-                accent={accent}
-                t={t}
-                primaryCurrency={primaryCurrency}
-                secondaryCurrency={secondaryCurrency}
-              />
-            ) : (
-              <TransferForm
-                total={Number(order.total)}
-                onSubmit={report}
-                accent={accent}
-                t={t}
-                primaryCurrency={primaryCurrency}
-                secondaryCurrency={secondaryCurrency}
-              />
-            )}
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <ShieldCheck className="size-4 text-success" /> {t("payment.secure")}
-            </p>
-          </div>
+              <div className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft">
+                {method === "pago_movil" ? (
+                  <MovilForm
+                    total={Number(order.total)}
+                    onSubmit={report}
+                    accent={accent}
+                    t={t}
+                    primaryCurrency={primaryCurrency}
+                    secondaryCurrency={secondaryCurrency}
+                  />
+                ) : (
+                  <TransferForm
+                    total={Number(order.total)}
+                    onSubmit={report}
+                    accent={accent}
+                    t={t}
+                    primaryCurrency={primaryCurrency}
+                    secondaryCurrency={secondaryCurrency}
+                  />
+                )}
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <ShieldCheck className="size-4 text-success" /> {t("payment.secure")}
+                </p>
+              </div>
+            </>
+          )}
         </section>
       )}
 

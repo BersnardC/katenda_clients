@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
+  CreditCard,
   Loader2,
   MessageCircle,
   Minus,
@@ -248,6 +249,12 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
                 style={{ backgroundColor: accent }}
               >
                 <Package className="size-4" /> {t("store.viewOrder")}
+              </Link>
+              <Link
+                href={`/account/orders/${registeredOrder.uuid}`}
+                className="w-full h-11 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
+              >
+                <CreditCard className="size-4" /> {t("store.payNow")}
               </Link>
               <button
                 onClick={handleKeepShopping}

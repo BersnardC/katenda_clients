@@ -4,6 +4,7 @@ import type { OrderStatus } from "@/types/models";
 
 const STATUS_KEYS: Record<OrderStatus, Key> = {
   pending: "orders.statusPending",
+  payment_reported: "orders.statusPaymentReported",
   confirmed: "orders.statusConfirmed",
   preparing: "orders.statusPreparing",
   shipped: "orders.statusShipped",

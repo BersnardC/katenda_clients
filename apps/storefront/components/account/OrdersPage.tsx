@@ -140,7 +140,9 @@ function OrderCard({ order }: { order: CustomerOrder }) {
           <span className="px-2 h-6 grid place-items-center rounded-full text-[10px] font-semibold bg-muted text-muted-foreground">
             {payment === "approved"
               ? t("order.payVerified")
-              : t("order.payReported")}
+              : order.status === "payment_reported"
+                ? t("order.status.payment_reported")
+                : t("order.payReported")}
           </span>
         )}
         <ChevronRight className="size-4 text-muted-foreground ml-auto" />

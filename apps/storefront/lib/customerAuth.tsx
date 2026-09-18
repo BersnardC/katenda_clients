@@ -68,6 +68,7 @@ export interface CustomerOrder {
   total: string;
   created_at: string;
   payment_method?: string | null;
+  rejections_count: number;
   items?: CustomerOrderItem[];
   events?: CustomerOrderEvent[];
   payment?: Payment | null;

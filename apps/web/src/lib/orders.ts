@@ -1,6 +1,7 @@
 // Catálogo de estados de pedido (mismo diseño Lovable pedidos.$id.tsx).
 export const ORDER_STATUSES = [
   { value: "pending", color: "#F7B267" },
+  { value: "payment_reported", color: "#F7B267" },
   { value: "confirmed", color: "#A0C4FF" },
   { value: "preparing", color: "#BDB2FF" },
   { value: "shipped", color: "#90E0EF" },
@@ -10,6 +11,7 @@ export const ORDER_STATUSES = [
 
 export const STATUS_FLOW = [
   "pending",
+  "payment_reported",
   "confirmed",
   "preparing",
   "shipped",
