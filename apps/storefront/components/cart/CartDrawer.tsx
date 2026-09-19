@@ -84,11 +84,6 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
     );
   };
 
-  const handleKeepShopping = () => {
-    clear();
-    resetOrder();
-  };
-
   // Si el carrito cambia tras registrar el pedido, el enlace de WhatsApp ya no
   // corresponde → volver al estado normal (evita enviar un resumen viejo).
   const cartKey = lines.map((l) => `${l.id}x${l.qty}`).join("|");
@@ -237,11 +232,12 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
                 </div>
               </div>
               <button
-                onClick={openWhatsapp}
+                onClick={() =>
+                  router.push(`/account/orders/${registeredOrder.uuid}#pay`)
+                }
                 className="w-full h-14 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
               >
-                <MessageCircle className="size-5" />
-                {t("store.openWhatsapp")}
+                <CreditCard className="size-5" /> {t("store.payNow")}
               </button>
               <Link
                 href={`/account/orders/${registeredOrder.uuid}`}
@@ -250,18 +246,15 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
               >
                 <Package className="size-4" /> {t("store.viewOrder")}
               </Link>
-              <Link
-                href={`/account/orders/${registeredOrder.uuid}`}
-                className="w-full h-11 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
-              >
-                <CreditCard className="size-4" /> {t("store.payNow")}
-              </Link>
-              <button
-                onClick={handleKeepShopping}
-                className="w-full h-11 rounded-2xl bg-surface border border-border text-sm font-semibold"
-              >
-                {t("store.keepShopping")}
-              </button>
+              {waPhone && (
+                <button
+                  onClick={openWhatsapp}
+                  className="w-full h-11 rounded-2xl bg-[#25D366] text-white font-semibold flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="size-5" />
+                  {t("store.openWhatsapp")}
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -295,7 +288,11 @@ export function CartDrawer({ open, onClose, store, account }: CartDrawerProps) {
             </>
           )}
           <p className="text-xs text-muted-foreground text-center">
-            {t("store.sendHint", { phone: waPhone })}
+            {orderPhase === "done"
+              ? t("store.orderRegisteredHint")
+              : lines.length === 0
+                ? t("store.cartEmptyHint")
+                : t("store.sendHintWithProducts")}
           </p>
         </div>
       </aside>

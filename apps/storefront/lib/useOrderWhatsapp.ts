@@ -131,14 +131,6 @@ export function useOrderWhatsapp({
         setLink(url);
         setPhase("done");
         toast.success(t("store.orderRegistered", { code: created.code }));
-
-        // Cortesía: auto-apertura en una llamada síncrona separada del await.
-        // Si el navegador la bloquea, send() (clic del usuario) es el respaldo.
-        autoTimerRef.current = window.setTimeout(() => {
-          if (openUrl(url)) {
-            finishSent();
-          }
-        }, AUTO_OPEN_DELAY_MS);
       } catch (e) {
         const message =
           e && typeof e === "object" && "message" in e

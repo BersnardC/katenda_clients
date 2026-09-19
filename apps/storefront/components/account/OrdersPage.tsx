@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
+  CreditCard,
   MessageCircle,
   Package,
   Plus,
@@ -122,6 +123,8 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   const statusLabel = t(orderStatusKey(order.status));
   const payment = payState(order.payment?.status);
 
+  const canPay = order.status === "pending" && payment === "none";
+
   return (
     <article className="block rounded-3xl bg-card border border-border p-4 shadow-soft hover:border-foreground/20 transition">
       <div className="flex items-center gap-2">
@@ -136,13 +139,14 @@ function OrderCard({ order }: { order: CustomerOrder }) {
         >
           {statusLabel}
         </span>
-        {payment !== "none" && (
-          <span className="px-2 h-6 grid place-items-center rounded-full text-[10px] font-semibold bg-muted text-muted-foreground">
-            {payment === "approved"
-              ? t("order.payVerified")
-              : order.status === "payment_reported"
-                ? t("order.status.payment_reported")
-                : t("order.payReported")}
+        {order.status === "payment_reported" && payment === "pending" && (
+          <span className="px-2 h-6 grid place-items-center rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">
+            {t("order.paymentPendingApproval")}
+          </span>
+        )}
+        {order.status === "confirmed" && payment === "approved" && (
+          <span className="px-2 h-6 grid place-items-center rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700">
+            {t("order.paymentApprovedBadge")}
           </span>
         )}
         <ChevronRight className="size-4 text-muted-foreground ml-auto" />
@@ -172,13 +176,24 @@ function OrderCard({ order }: { order: CustomerOrder }) {
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2">
-        <Link
-          href={`/account/orders/${order.uuid}`}
-          className="flex-1 h-10 rounded-2xl text-white text-sm font-semibold grid place-items-center"
-          style={{ backgroundColor: accent }}
-        >
-          {t("order.viewDetail")}
-        </Link>
+        {canPay ? (
+          <Link
+            href={`/account/orders/${order.uuid}#pay`}
+            className="flex-1 h-10 rounded-2xl bg-[#25D366] text-white text-sm font-semibold grid place-items-center"
+          >
+            <span className="flex items-center gap-1.5">
+              <CreditCard className="size-4" /> {t("order.payNow")}
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href={`/account/orders/${order.uuid}`}
+            className="flex-1 h-10 rounded-2xl text-white text-sm font-semibold grid place-items-center"
+            style={{ backgroundColor: accent }}
+          >
+            {t("order.viewDetail")}
+          </Link>
+        )}
         {waPhone && (
           <a
             href={whatsappLink(

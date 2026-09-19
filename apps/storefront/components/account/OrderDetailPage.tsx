@@ -71,6 +71,14 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
       .finally(() => setLoading(false));
   }, [slug, orderUuid]);
 
+  // Scroll suave a la sección de pago cuando se navega con #pay.
+  useEffect(() => {
+    if (!loading && order && window.location.hash === "#pay") {
+      const el = document.getElementById("pay");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [loading, order]);
+
   // Polling: refresco ligero cada 60s solo en estados activos.
   useAutoRefresh({
     key: `order-status:${slug}:${orderUuid}`,
@@ -235,6 +243,17 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
             </p>
             <p className="text-xs text-orange-600 mt-1">
               {t("order.rejectionsLeft", { count: order.rejections_count })}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order.status === "pending" && !order.rejections_count && (
+        <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3 print:hidden">
+          <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-amber-800">
+              {t("order.pendingPaymentBanner")}
             </p>
           </div>
         </div>
@@ -407,7 +426,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
             <li key={h.id} className="flex items-center gap-3">
               <span
                 className="size-2.5 rounded-full"
-                style={{ backgroundColor: accent }}
+                style={{ backgroundColor: ORDER_STATUS_COLORS[h.status] ?? accent }}
               />
               <span className="flex-1">
                 {t(orderStatusKey(h.status))}
@@ -446,7 +465,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
 
       {/* Pago */}
       {canPay && (
-        <section className="mt-4 print:hidden">
+        <section id="pay" className="mt-4 print:hidden">
           <h2 className="font-display font-bold text-lg mb-3">
             {t("payment.payOrder")}
           </h2>
