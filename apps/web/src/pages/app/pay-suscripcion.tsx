@@ -23,7 +23,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSubscription } from "@/hooks/useAccount";
 import { accountService } from "@/services/accountService";
 import { paymentService } from "@/services/paymentService";
-import type { PaymentMethod, Plan, Promotion } from "@/types/models";
+import type { PaymentGateway, Plan, Promotion } from "@/types/models";
 
 const BS_RATE = 805;
 
@@ -53,7 +53,7 @@ export function Component() {
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [methods, setMethods] = useState<PaymentGateway[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
@@ -89,8 +89,8 @@ export function Component() {
         const activePlans = planRes.plans.filter((p) => Number(p.status) === 1);
         setPlans(activePlans);
         setPromotions(promoRes.promotions);
-        setMethods(methodRes.payment_methods);
-        setMethod((prev) => prev || methodRes.payment_methods[0]?.code || "");
+        setMethods(methodRes.payment_gateways);
+        setMethod((prev) => prev || methodRes.payment_gateways[0]?.code || "");
 
         const paramPlan = params.get("plan");
         const fromParam = paramPlan

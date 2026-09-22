@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
+import { ArrowLeft, CreditCard, ExternalLink, Loader2, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useApp } from "@/contexts/AppContext";
@@ -155,6 +155,7 @@ export function Component() {
         {isLoading ? (
           <SkeletonStoreForm />
         ) : store && account && formValue ? (
+          <>
           <form onSubmit={submit} className="space-y-4">
             <StoreForm
               key={store.uuid}
@@ -174,6 +175,18 @@ export function Component() {
               {saving ? t("common.saving") : t("stores.save")}
             </button>
           </form>
+          <Link
+            to="/payment-methods"
+            className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border shadow-soft hover:border-primary/50 transition"
+          >
+            <CreditCard className="size-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="font-semibold text-sm">{t("spm.title")}</p>
+              <p className="text-xs text-muted-foreground">{t("spm.titleSub")}</p>
+            </div>
+            <ExternalLink className="size-4 text-muted-foreground" />
+          </Link>
+          </>
         ) : (
           <CreateStoreFallback onCreated={refetchStores} />
         )}

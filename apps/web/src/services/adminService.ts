@@ -1,12 +1,16 @@
 import { api } from "@/lib/api";
-import type { Payment, PaymentMethod, Plan, Promotion } from "@/types/models";
+import type { Payment, PaymentGateway, Plan, Promotion } from "@/types/models";
 import type { Paginated } from "@/types/pagination";
 
-export interface PaymentMethodInput {
+export interface PaymentGatewayInput {
   code?: string;
   name?: string;
   label?: string | null;
-  instructions?: Record<string, string> | null;
+  country_id?: number | null;
+  is_manual?: boolean;
+  requires_integration?: boolean;
+  instructions?: Record<string, unknown> | null;
+  report_fields?: Record<string, unknown> | null;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -47,18 +51,18 @@ export const adminService = {
   // GET /admin/plans -> { plans }
   plans: () => api.get<{ plans: Plan[] }>("/admin/plans"),
 
-  // Payment methods CRUD
-  paymentMethods: () =>
-    api.get<{ payment_methods: PaymentMethod[] }>("/admin/payment-methods"),
-  createPaymentMethod: (data: PaymentMethodInput) =>
-    api.post<{ payment_method: PaymentMethod }>("/admin/payment-methods", data),
-  updatePaymentMethod: (uuid: string, data: PaymentMethodInput) =>
-    api.put<{ payment_method: PaymentMethod }>(
-      `/admin/payment-methods/${uuid}`,
+  // Payment gateways CRUD
+  paymentGateways: () =>
+    api.get<{ payment_gateways: PaymentGateway[] }>("/admin/payment-gateways"),
+  createPaymentGateway: (data: PaymentGatewayInput) =>
+    api.post<{ payment_gateway: PaymentGateway }>("/admin/payment-gateways", data),
+  updatePaymentGateway: (uuid: string, data: PaymentGatewayInput) =>
+    api.put<{ payment_gateway: PaymentGateway }>(
+      `/admin/payment-gateways/${uuid}`,
       data,
     ),
-  deletePaymentMethod: (uuid: string) =>
-    api.delete<{ message: string }>(`/admin/payment-methods/${uuid}`),
+  deletePaymentGateway: (uuid: string) =>
+    api.delete<{ message: string }>(`/admin/payment-gateways/${uuid}`),
 
   // Promotions CRUD
   promotions: () =>

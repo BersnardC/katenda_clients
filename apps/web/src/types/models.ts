@@ -381,16 +381,66 @@ export interface Customer {
   orders?: Order[];
 }
 
-// Tipo de pago configurable (pago_movil | transferencia | binance)
-export interface PaymentMethod {
+// Gateway de pago (catálogo admin: transferencia, pago móvil, binance, etc.)
+export interface PaymentGateway {
   id: number;
   uuid: string;
   code: string;
   name: string;
   label: string | null;
-  instructions: Record<string, string> | null;
+  country_id: number | null;
+  is_manual: boolean;
+  requires_integration: boolean;
+  instructions: Record<string, any> | null;
+  report_fields: Record<string, any> | null;
   is_active: boolean;
   sort_order: number;
+  country?: Country;
+  platform_banks?: PlatformBank[];
+}
+
+// Institución bancaria / procesador (catálogo admin)
+export interface PlatformBank {
+  id: number;
+  uuid: string;
+  name: string;
+  code: string;
+  country_id: number | null;
+  logo_url: string | null;
+  type: string;
+  extra: Record<string, any> | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface PaymentMethodField {
+  key: string;
+  label: string;
+  type: "text" | "tel" | "email" | "number" | "select" | "textarea" | "date" | "image";
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+  source?: string;
+  source_filters?: Record<string, unknown>;
+}
+
+// Método de pago configurado por el comercio en su tienda
+export interface PaymentMethod {
+  id: number;
+  uuid: string;
+  paymentable_type: string;
+  paymentable_id: number;
+  account_id: number;
+  payment_gateway_id: number;
+  platform_bank_id: number | null;
+  label: string | null;
+  data: Record<string, string> | null;
+  note: string | null;
+  is_active: boolean;
+  sort_order: number;
+  payment_gateway?: PaymentGateway;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 // Promoción / periodo de plan (3 meses por 2, 6 meses, anual...)

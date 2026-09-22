@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { adminService, type PaymentMethodInput } from "@/services/adminService";
-import type { PaymentMethod } from "@/types/models";
+import { adminService, type PaymentGatewayInput } from "@/services/adminService";
+import type { PaymentGateway } from "@/types/models";
 
 const emptyForm = {
   code: "",
@@ -13,6 +13,7 @@ const emptyForm = {
   sort_order: "0",
   is_active: true,
   instructions: "{}",
+  report_fields: "{}",
 };
 
 const errMsg = (e: unknown, fallback: string) =>
@@ -20,7 +21,7 @@ const errMsg = (e: unknown, fallback: string) =>
 
 export function Component() {
   const { t } = useI18n();
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [gateways, setGateways] = useState<PaymentGateway[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingUuid, setEditingUuid] = useState<string | null>(null);
@@ -29,8 +30,8 @@ export function Component() {
 
   const load = () => {
     adminService
-      .paymentMethods()
-      .then((res) => setMethods(res.payment_methods))
+      .paymentGateways()
+      .then((res) => setGateways(res.payment_gateways))
       .catch((e) => toast.error(errMsg(e, t("sa.loadError"))))
       .finally(() => setLoading(false));
   };
@@ -46,7 +47,7 @@ export function Component() {
     setShowForm(true);
   };
 
-  const startEdit = (m: PaymentMethod) => {
+  const startEdit = (m: PaymentGateway) => {
     setEditingUuid(m.uuid);
     setForm({
       code: m.code,
@@ -55,6 +56,7 @@ export function Component() {
       sort_order: String(m.sort_order),
       is_active: m.is_active,
       instructions: JSON.stringify(m.instructions ?? {}, null, 2),
+      report_fields: JSON.stringify(m.report_fields ?? {}, null, 2),
     });
     setShowForm(true);
   };
@@ -63,9 +65,9 @@ export function Component() {
     e.preventDefault();
     if (saving) return;
 
-    const parseInstructions = (): Record<string, string> | null => {
+    const parseInstructions = (): Record<string, unknown> | null => {
       try {
-        return JSON.parse(form.instructions || "{}") as Record<string, string>;
+        return JSON.parse(form.instructions || "{}") as Record<string, unknown>;
       } catch {
         return null;
       }
@@ -77,22 +79,37 @@ export function Component() {
       return;
     }
 
-    const payload: PaymentMethodInput = {
+    const parseReportFields = (): Record<string, unknown> | null => {
+      try {
+        return JSON.parse(form.report_fields || "{}") as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    };
+
+    const reportFields = parseReportFields();
+    if (!reportFields) {
+      toast.error(t("sa.invalidJson"));
+      return;
+    }
+
+    const payload: PaymentGatewayInput = {
       code: form.code,
       name: form.name,
       label: form.label || null,
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
       instructions,
+      report_fields: reportFields,
     };
 
     setSaving(true);
     try {
       if (editingUuid) {
-        await adminService.updatePaymentMethod(editingUuid, payload);
+        await adminService.updatePaymentGateway(editingUuid, payload);
         toast.success(t("sa.saved"));
       } else {
-        await adminService.createPaymentMethod(payload);
+        await adminService.createPaymentGateway(payload);
         toast.success(t("sa.created"));
       }
       setShowForm(false);
@@ -105,19 +122,19 @@ export function Component() {
     }
   };
 
-  const toggle = async (m: PaymentMethod) => {
+  const toggle = async (m: PaymentGateway) => {
     try {
-      await adminService.updatePaymentMethod(m.uuid, { is_active: !m.is_active });
+      await adminService.updatePaymentGateway(m.uuid, { is_active: !m.is_active });
       load();
     } catch (e) {
       toast.error(errMsg(e, t("sa.saveError")));
     }
   };
 
-  const remove = async (m: PaymentMethod) => {
+  const remove = async (m: PaymentGateway) => {
     if (!window.confirm(t("sa.confirmDelete"))) return;
     try {
-      await adminService.deletePaymentMethod(m.uuid);
+      await adminService.deletePaymentGateway(m.uuid);
       toast.success(t("sa.deleted"));
       load();
     } catch (e) {
@@ -196,11 +213,20 @@ export function Component() {
             </label>
           </div>
           <textarea
-            placeholder='{"bank":"...","account":"..."}'
+            placeholder='{"fields":[{"key":"ref","label":"Referencia","type":"text","required":true}]}'
             className="w-full h-32 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm font-mono"
             value={form.instructions}
             onChange={(e) => setForm({ ...form, instructions: e.target.value })}
           />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Campos del cliente (report_fields)</label>
+            <textarea
+              placeholder='{"fields":[{"key":"reference","label":"Referencia","type":"text","required":true}]}'
+              className="w-full h-32 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm font-mono"
+              value={form.report_fields}
+              onChange={(e) => setForm({ ...form, report_fields: e.target.value })}
+            />
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -233,7 +259,7 @@ export function Component() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {methods.map((m) => (
+            {gateways.map((m) => (
               <li
                 key={m.uuid}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border"

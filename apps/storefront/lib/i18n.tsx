@@ -149,6 +149,8 @@ const dict = {
     "payment.successSub": "Verificaremos tu pago muy pronto y te avisaremos por aquí.",
     "payment.seeOrder": "Ver mi pedido",
     "payment.secure": "Pago seguro y cifrado",
+    "payment.report": "Reportar pago",
+    "payment.storeData": "Datos de pago del comercio",
 
     "profile.title": "Mi perfil",
     "profile.subtitle": "Tus datos personales",
@@ -329,6 +331,8 @@ const dict = {
     "payment.successSub": "We will verify your payment soon and let you know here.",
     "payment.seeOrder": "View my order",
     "payment.secure": "Secure and encrypted payment",
+    "payment.report": "Report payment",
+    "payment.storeData": "Store payment details",
 
     "profile.title": "My profile",
     "profile.subtitle": "Your personal data",

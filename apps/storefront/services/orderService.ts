@@ -1,7 +1,11 @@
 "use client";
 
 import { clientApi } from "@/lib/clientApi";
-import type { CustomerOrder, Payment } from "@/lib/customerAuth";
+import type {
+  CustomerOrder,
+  Payment,
+  StorePaymentMethod,
+} from "@/lib/customerAuth";
 
 export interface OrderItemInput {
   product_uuid: string;
@@ -57,8 +61,9 @@ export async function fetchOrderStatus(
 }
 
 export interface ReportPaymentInput {
-  method: "pago_movil" | "transferencia";
-  reference: string;
+  payment_method_id: number;
+  report_data: Record<string, string>;
+  reference?: string;
   detail?: string;
 }
 
@@ -83,6 +88,15 @@ export async function markOrderReceived(
 export async function fetchPayments(slug: string): Promise<Payment[]> {
   const res = await clientApi.get<{ data: Payment[] }>(
     `/s/${slug}/payments`,
+  );
+  return res.data ?? [];
+}
+
+export async function fetchPaymentMethods(
+  slug: string,
+): Promise<StorePaymentMethod[]> {
+  const res = await clientApi.get<{ data: StorePaymentMethod[] }>(
+    `/s/${slug}/payment-methods`,
   );
   return res.data ?? [];
 }

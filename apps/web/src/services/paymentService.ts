@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { Payment, PaymentMethod, Promotion } from "@/types/models";
+import type { Payment, PaymentGateway, Promotion } from "@/types/models";
 import type { Paginated } from "@/types/pagination";
 
 export interface ReportPaymentInput {
@@ -25,7 +25,7 @@ export const paymentService = {
     api.post<{ payment: Payment }>("/account/payments", data),
   // GET /promotions -> { promotions }
   promotions: () => api.get<{ promotions: Promotion[] }>("/promotions"),
-  // GET /payment-methods -> { payment_methods }
+  // GET /payment-gateways -> { payment_gateways }
   paymentMethods: () =>
-    api.get<{ payment_methods: PaymentMethod[] }>("/payment-methods"),
+    api.get<{ payment_gateways: PaymentGateway[] }>("/payment-gateways"),
 };

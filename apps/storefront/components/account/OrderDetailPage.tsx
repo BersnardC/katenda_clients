@@ -5,7 +5,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Building2,
   Check,
   CheckCircle,
   Clock,
@@ -15,7 +14,6 @@ import {
   PartyPopper,
   Printer,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Store,
   XCircle,
@@ -37,15 +35,18 @@ import {
   payState,
 } from "@/lib/orders";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
-import { fetchOrder, fetchOrderStatus, markOrderReceived, reportPayment } from "@/services/orderService";
-import type { CustomerOrder } from "@/lib/customerAuth";
+import {
+  fetchOrder,
+  fetchOrderStatus,
+  fetchPaymentMethods,
+  markOrderReceived,
+  reportPayment,
+} from "@/services/orderService";
+import type { CustomerOrder, StorePaymentMethod } from "@/lib/customerAuth";
+import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
+import { PaymentReportForm } from "@/components/payment/PaymentReportForm";
 
 type TFunc = (k: Key, vars?: Record<string, string | number>) => string;
-
-const inputCls =
-  "w-full h-11 px-3 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm";
-
-type Method = "pago_movil" | "transferencia";
 
 export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const { t } = useI18n();
@@ -56,7 +57,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [method, setMethod] = useState<Method>("pago_movil");
+  const [selectedMethod, setSelectedMethod] = useState<StorePaymentMethod | null>(null);
+  const [storePaymentMethods, setStorePaymentMethods] = useState<StorePaymentMethod[]>([]);
   const [success, setSuccess] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const prevStatusRef = useRef<string | null>(null);
@@ -69,6 +71,13 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
+
+    fetchPaymentMethods(slug)
+      .then((methods) => {
+        setStorePaymentMethods(methods);
+        if (methods.length > 0) setSelectedMethod(methods[0]);
+      })
+      .catch(() => {});
   }, [slug, orderUuid]);
 
   // Scroll suave a la sección de pago cuando se navega con #pay.
@@ -146,16 +155,14 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
 
   const report = async (
     e: React.FormEvent,
-    m: Method,
-    reference: string,
-    detail: string,
+    reportData: Record<string, string>,
   ) => {
     e.preventDefault();
+    if (!selectedMethod?.id) return;
     try {
       const res = await reportPayment(slug, order.uuid, {
-        method: m,
-        reference,
-        detail,
+        payment_method_id: selectedMethod.id,
+        report_data: reportData,
       });
       setOrder(res.order);
       setSuccess(true);
@@ -483,47 +490,27 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2">
-                <MethodBtn
-                  icon={<Smartphone className="size-5" />}
-                  label={t("payment.method.pago_movil")}
-                  active={method === "pago_movil"}
-                  onClick={() => setMethod("pago_movil")}
-                  accent={accent}
-                />
-                <MethodBtn
-                  icon={<Building2 className="size-5" />}
-                  label={t("payment.method.transferencia")}
-                  active={method === "transferencia"}
-                  onClick={() => setMethod("transferencia")}
-                  accent={accent}
-                />
-              </div>
+              <PaymentMethodSelector
+                methods={storePaymentMethods}
+                selected={selectedMethod}
+                onSelect={setSelectedMethod}
+                accent={accent}
+                t={t as unknown as (k: string, vars?: Record<string, string | number>) => string}
+              />
 
-              <div className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft">
-                {method === "pago_movil" ? (
-                  <MovilForm
+              {selectedMethod && (
+                <div className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft">
+                  <PaymentReportForm
+                    method={selectedMethod}
                     total={Number(order.total)}
-                    onSubmit={report}
                     accent={accent}
-                    t={t}
+                    t={t as unknown as (k: string, vars?: Record<string, string | number>) => string}
                     primaryCurrency={primaryCurrency}
                     secondaryCurrency={secondaryCurrency}
-                  />
-                ) : (
-                  <TransferForm
-                    total={Number(order.total)}
                     onSubmit={report}
-                    accent={accent}
-                    t={t}
-                    primaryCurrency={primaryCurrency}
-                    secondaryCurrency={secondaryCurrency}
                   />
-                )}
-                <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <ShieldCheck className="size-4 text-success" /> {t("payment.secure")}
-                </p>
-              </div>
+                </div>
+              )}
             </>
           )}
         </section>
@@ -554,10 +541,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   );
 }
 
-function methodLabel(t: TFunc, method: string): string {
-  if (method === "pago_movil") return t("payment.method.pago_movil");
-  if (method === "transferencia") return t("payment.method.transferencia");
-  return method;
+function methodLabel(_t: TFunc, method: string): string {
+  return method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function Row({
@@ -576,175 +561,5 @@ function Row({
         {value}
       </span>
     </div>
-  );
-}
-
-function MethodBtn({
-  icon,
-  label,
-  active,
-  onClick,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  accent: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition ${
-        active ? "border-transparent" : "bg-card border-border text-muted-foreground"
-      }`}
-      style={
-        active
-          ? { backgroundColor: accent + "1f", color: accent, borderColor: accent }
-          : undefined
-      }
-    >
-      {icon}
-      <span className="text-[11px] font-semibold">{label}</span>
-    </button>
-  );
-}
-
-type ReportFn = (
-  e: React.FormEvent,
-  m: Method,
-  reference: string,
-  detail: string,
-) => void;
-
-function AmountInfo({
-  total,
-  primaryCurrency,
-  secondaryCurrency,
-}: {
-  total: number;
-  primaryCurrency: string;
-  secondaryCurrency: { code: string } | null;
-}) {
-  return (
-    <div className="rounded-2xl bg-surface border border-border p-4 text-sm space-y-1">
-      <p className="font-semibold">Monto</p>
-      <p className="text-muted-foreground">
-        {fmtCurrency(total, primaryCurrency)}
-        {secondaryCurrency && (
-          <span className="text-xs">
-            {" "}
-            · ≈ {fmtCurrency(total, secondaryCurrency.code)}
-          </span>
-        )}
-      </p>
-    </div>
-  );
-}
-
-function MovilForm({
-  total,
-  onSubmit,
-  accent,
-  t,
-  primaryCurrency,
-  secondaryCurrency,
-}: {
-  total: number;
-  onSubmit: ReportFn;
-  accent: string;
-  t: TFunc;
-  primaryCurrency: string;
-  secondaryCurrency: { code: string } | null;
-}) {
-  const [phone, setPhone] = useState("");
-  const [ref, setRef] = useState("");
-  return (
-    <form
-      onSubmit={(e) => onSubmit(e, "pago_movil", ref, phone)}
-      className="space-y-3"
-    >
-      <AmountInfo
-        total={total}
-        primaryCurrency={primaryCurrency}
-        secondaryCurrency={secondaryCurrency}
-      />
-      <input
-        type="tel"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        placeholder={t("payment.phone")}
-        className={inputCls}
-        required
-      />
-      <input
-        value={ref}
-        onChange={(e) => setRef(e.target.value)}
-        placeholder={t("payment.reference")}
-        inputMode="numeric"
-        className={inputCls}
-        required
-      />
-      <SubmitBtn accent={accent} label={t("payment.reportMovil")} />
-    </form>
-  );
-}
-
-function TransferForm({
-  total,
-  onSubmit,
-  accent,
-  t,
-  primaryCurrency,
-  secondaryCurrency,
-}: {
-  total: number;
-  onSubmit: ReportFn;
-  accent: string;
-  t: TFunc;
-  primaryCurrency: string;
-  secondaryCurrency: { code: string } | null;
-}) {
-  const [bank, setBank] = useState("");
-  const [ref, setRef] = useState("");
-  return (
-    <form
-      onSubmit={(e) => onSubmit(e, "transferencia", ref, bank)}
-      className="space-y-3"
-    >
-      <AmountInfo
-        total={total}
-        primaryCurrency={primaryCurrency}
-        secondaryCurrency={secondaryCurrency}
-      />
-      <input
-        value={bank}
-        onChange={(e) => setBank(e.target.value)}
-        placeholder={t("payment.bank")}
-        className={inputCls}
-        required
-      />
-      <input
-        value={ref}
-        onChange={(e) => setRef(e.target.value)}
-        placeholder={t("payment.reference")}
-        className={inputCls}
-        required
-      />
-      <SubmitBtn accent={accent} label={t("payment.reportTransfer")} />
-    </form>
-  );
-}
-
-function SubmitBtn({ accent, label }: { accent: string; label: string }) {
-  return (
-    <button
-      type="submit"
-      className="w-full py-3.5 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
-      style={{ backgroundColor: accent }}
-    >
-      {label}
-    </button>
   );
 }

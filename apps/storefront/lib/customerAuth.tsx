@@ -28,12 +28,50 @@ export interface Customer {
   status: number;
 }
 
+export interface PaymentMethodField {
+  key: string;
+  label: string;
+  type: "text" | "tel" | "email" | "number" | "select" | "textarea" | "date" | "image";
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+  source?: string;
+  source_filters?: Record<string, unknown>;
+}
+
+export interface StorePaymentMethod {
+  id: number;
+  uuid: string;
+  store_id: number;
+  payment_method_id: number;
+  label: string | null;
+  data: Record<string, string> | null;
+  hint: string | null;
+  is_active: boolean;
+  sort_order: number;
+  payment_method?: {
+    id: number;
+    uuid: string;
+    code: string;
+    name: string;
+    label: string | null;
+    instructions: Record<string, unknown> | null;
+    report_fields: Record<string, unknown> | null;
+    is_active: boolean;
+    sort_order: number;
+  };
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface Payment {
   id: number;
   uuid: string;
   method: string;
+  payment_method_id: number | null;
   reference: string | null;
   detail: string | null;
+  report_data: Record<string, unknown> | null;
   amount: string;
   currency_id: number | null;
   status: string;
