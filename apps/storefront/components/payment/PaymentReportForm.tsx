@@ -17,6 +17,12 @@ interface ReportField {
   options?: string[];
 }
 
+interface InstructionField {
+  key: string;
+  label: string;
+  source?: string;
+}
+
 const inputCls =
   "w-full h-11 px-3 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm";
 
@@ -38,12 +44,35 @@ export function PaymentReportForm({
   onSubmit: (e: React.FormEvent, reportData: Record<string, string>) => void;
 }) {
   const storeData = method.data;
-  const hint =
-    method.hint ||
-    String(
-      (method.payment_method?.instructions as Record<string, unknown> | null)
-        ?.hint ?? "",
-    );
+  const instructions = method.payment_method?.instructions as Record<string, unknown> | null;
+  const instructionFields =
+    (instructions?.fields as InstructionField[] | undefined) ?? [];
+  const labelMap = new Map(instructionFields.map((f) => [f.key, f.label]));
+  const banks = method.payment_method?.platform_banks ?? [];
+
+  const hint = method.hint ?? "";
+
+  const formatStoreValue = (key: string, value: string): string => {
+    const field = instructionFields.find((f) => f.key === key);
+    if (field?.source === "platform_banks") {
+      const bank = banks.find((b) => String(b.id) === value);
+      return bank?.name ?? value;
+    }
+    return value;
+  };
+
+  const storeEntries: [string, string][] =
+    storeData && Object.keys(storeData).length > 0
+      ? (instructionFields.length > 0
+          ? instructionFields
+              .map((f): [string, string] | null => {
+                const value = storeData[f.key];
+                return value ? [f.key, value] : null;
+              })
+              .filter((entry): entry is [string, string] => entry !== null)
+          : (Object.entries(storeData) as [string, string][])
+      ).filter(([, value]) => value)
+      : [];
 
   const reportFields: ReportField[] =
     (
@@ -77,17 +106,17 @@ export function PaymentReportForm({
       </div>
 
       {/* Datos del comercio (solo lectura) */}
-      {storeData && Object.keys(storeData).length > 0 && (
+      {storeEntries.length > 0 && (
         <div className="rounded-2xl bg-surface border border-border p-4 text-sm space-y-1">
           <p className="font-semibold">{t("payment.storeData")}</p>
-          {Object.entries(storeData).map(([key, value]) =>
-            value ? (
-              <p key={key} className="text-muted-foreground text-xs">
-                <span className="capitalize">{key.replace(/_/g, " ")}:</span>{" "}
-                <span className="font-medium text-foreground">{String(value)}</span>
-              </p>
-            ) : null,
-          )}
+          {storeEntries.map(([key, value]) => (
+            <p key={key} className="text-muted-foreground text-xs">
+              <span>{labelMap.get(key) ?? key.replace(/_/g, " ")}:</span>{" "}
+              <span className="font-medium text-foreground">
+                {formatStoreValue(key, value)}
+              </span>
+            </p>
+          ))}
         </div>
       )}
 

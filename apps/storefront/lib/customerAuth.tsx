@@ -59,6 +59,7 @@ export interface StorePaymentMethod {
     report_fields: Record<string, unknown> | null;
     is_active: boolean;
     sort_order: number;
+    platform_banks?: { id: number; name: string; code?: string }[] | null;
   };
   created_at: string | null;
   updated_at: string | null;

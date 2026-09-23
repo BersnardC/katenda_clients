@@ -91,6 +91,26 @@ export function Component() {
     return (instr as unknown as { fields: PaymentMethodField[] }).fields ?? [];
   };
 
+  const formatDataValue = (
+    m: PaymentMethod,
+    key: string,
+    value: string,
+  ): string => {
+    const instr = m.payment_gateway?.instructions;
+    const fields =
+      instr && "fields" in instr
+        ? (instr as unknown as { fields: PaymentMethodField[] }).fields ?? []
+        : [];
+    const field = fields.find((f) => f.key === key);
+    if (field?.source === "platform_banks") {
+      const bank = m.payment_gateway?.platform_banks?.find(
+        (b) => String(b.id) === value,
+      );
+      return bank?.name ?? value;
+    }
+    return value;
+  };
+
   const getSourceOptions = (field: PaymentMethodField): PlatformBank[] => {
     if (field.source !== "platform_banks") return [];
     const banks = selectedGlobalMethod?.platform_banks ?? [];
@@ -336,12 +356,17 @@ export function Component() {
               ))}
 
               {/* Note */}
-              <textarea
-                placeholder={t("spm.hintPlaceholder")}
-                className="w-full h-16 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  {t("spm.noteLabel")}
+                </label>
+                <textarea
+                  placeholder={t("spm.hintPlaceholder")}
+                  className="w-full h-16 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-sm"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
             </>
           )}
 
@@ -396,7 +421,12 @@ export function Component() {
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {m.data
-                      ? Object.values(m.data).filter(Boolean).join(" · ")
+                      ? Object.entries(m.data)
+                          .filter(([, value]) => value)
+                          .map(([key, value]) =>
+                            formatDataValue(m, key, value),
+                          )
+                          .join(" · ")
                       : "—"}
                   </p>
                 </div>
