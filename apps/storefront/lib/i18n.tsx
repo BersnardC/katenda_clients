@@ -157,6 +157,7 @@ const dict = {
     "payment.noMethods": "Aún no se han configurado métodos de pago, contacta a la tienda para",
     "payment.noMethodsLink": "información sobre cómo realizar el pago",
     "payment.noMethodsWx": "Hola, quiero información sobre los métodos de pago para realizar mi pedido {code}.",
+    "payment.selectPlaceholder": "Selecciona…",
 
     "profile.title": "Mi perfil",
     "profile.subtitle": "Tus datos personales",
@@ -345,6 +346,7 @@ const dict = {
     "payment.noMethods": "No payment methods have been configured yet, contact the store for",
     "payment.noMethodsLink": "information on how to pay",
     "payment.noMethodsWx": "Hi, I'd like information about payment methods to pay for my order {code}.",
+    "payment.selectPlaceholder": "Select…",
 
     "profile.title": "My profile",
     "profile.subtitle": "Your personal data",

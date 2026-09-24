@@ -187,7 +187,10 @@ export function PaymentReportForm({
       {reportFields.map((field) =>
         field.type === "image" ? (
           <div key={field.key}>
-            <p className="text-sm font-medium mb-1.5">{field.label}</p>
+            <p className="text-sm font-medium mb-1.5">
+              {field.label}
+              {field.required && <span className="text-destructive"> *</span>}
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {previews[field.key] ? (
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
@@ -237,13 +240,19 @@ export function PaymentReportForm({
           </div>
         ) : field.type === "select" ? (
           <div key={field.key}>
+            {field.label && (
+              <p className="text-sm font-medium mb-1.5">
+                {field.label}
+                {field.required && <span className="text-destructive"> *</span>}
+              </p>
+            )}
             <select
               className={inputCls}
               required={field.required}
               value={fieldValues[field.key] ?? ""}
               onChange={(e) => handleChange(field.key, e.target.value)}
             >
-              <option value="">{field.label}</option>
+              <option value="">{t("payment.selectPlaceholder")}</option>
               {field.options?.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
@@ -253,9 +262,15 @@ export function PaymentReportForm({
           </div>
         ) : field.type === "textarea" ? (
           <div key={field.key}>
+            {field.label && (
+              <p className="text-sm font-medium mb-1.5">
+                {field.label}
+                {field.required && <span className="text-destructive"> *</span>}
+              </p>
+            )}
             <textarea
               className={inputCls + " h-20 resize-none"}
-              placeholder={field.placeholder ?? field.label}
+              placeholder={field.placeholder}
               required={field.required}
               value={fieldValues[field.key] ?? ""}
               onChange={(e) => handleChange(field.key, e.target.value)}
@@ -263,10 +278,16 @@ export function PaymentReportForm({
           </div>
         ) : (
           <div key={field.key}>
+            {field.label && (
+              <p className="text-sm font-medium mb-1.5">
+                {field.label}
+                {field.required && <span className="text-destructive"> *</span>}
+              </p>
+            )}
             <input
               type={field.type}
               className={inputCls}
-              placeholder={field.placeholder ?? field.label}
+              placeholder={field.placeholder}
               required={field.required}
               value={fieldValues[field.key] ?? ""}
               onChange={(e) => handleChange(field.key, e.target.value)}
