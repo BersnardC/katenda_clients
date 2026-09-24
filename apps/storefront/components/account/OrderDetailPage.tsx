@@ -41,6 +41,7 @@ import {
   fetchPaymentMethods,
   markOrderReceived,
   reportPayment,
+  uploadPaymentReceipt,
 } from "@/services/orderService";
 import type { CustomerOrder, StorePaymentMethod } from "@/lib/customerAuth";
 import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
@@ -156,10 +157,17 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const report = async (
     e: React.FormEvent,
     reportData: Record<string, string>,
+    files: Record<string, File> = {},
   ) => {
     e.preventDefault();
     if (!selectedMethod?.id) return;
     try {
+      // Subir comprobantes (type: image) a storage → URL en report_data.
+      for (const [key, file] of Object.entries(files)) {
+        const { url } = await uploadPaymentReceipt(slug, order.uuid, file);
+        reportData[key] = url;
+      }
+
       const res = await reportPayment(slug, order.uuid, {
         payment_method_id: selectedMethod.id,
         report_data: reportData,
@@ -501,6 +509,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
               {selectedMethod && (
                 <div className="mt-4 rounded-3xl bg-card border border-border p-5 shadow-soft">
                   <PaymentReportForm
+                    key={selectedMethod.id}
                     method={selectedMethod}
                     total={Number(order.total)}
                     accent={accent}

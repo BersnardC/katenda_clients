@@ -98,6 +98,29 @@ export const clientApi = {
   },
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body }),
+  // multipart/form-data (uploads): no forzar Content-Type JSON.
+  postForm: <T>(path: string, formData: FormData) => {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    const token = getCustomerToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    return fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers,
+      body: formData,
+    }).then(async (res) => {
+      if (res.status === 204) return undefined as T;
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        const message =
+          payload && typeof payload === "object" && "message" in payload
+            ? String((payload as { message?: string }).message)
+            : "Request failed";
+        throw new ApiError(res.status, message, payload);
+      }
+      return payload as T;
+    });
+  },
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PUT", body }),
 };

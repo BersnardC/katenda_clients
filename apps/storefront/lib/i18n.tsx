@@ -151,6 +151,8 @@ const dict = {
     "payment.secure": "Pago seguro y cifrado",
     "payment.report": "Reportar pago",
     "payment.storeData": "Datos de pago del comercio",
+    "payment.addImage": "Agregar imagen",
+    "payment.removeImage": "Quitar imagen",
 
     "profile.title": "Mi perfil",
     "profile.subtitle": "Tus datos personales",
@@ -333,6 +335,8 @@ const dict = {
     "payment.secure": "Secure and encrypted payment",
     "payment.report": "Report payment",
     "payment.storeData": "Store payment details",
+    "payment.addImage": "Add image",
+    "payment.removeImage": "Remove image",
 
     "profile.title": "My profile",
     "profile.subtitle": "Your personal data",

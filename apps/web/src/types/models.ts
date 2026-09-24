@@ -418,6 +418,7 @@ export interface PaymentMethodField {
   label: string;
   type: "text" | "tel" | "email" | "number" | "select" | "textarea" | "date" | "image";
   required: boolean;
+  hidden?: boolean;
   placeholder?: string;
   options?: string[];
   source?: string;

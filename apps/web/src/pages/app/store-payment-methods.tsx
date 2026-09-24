@@ -88,7 +88,9 @@ export function Component() {
   const getFields = (): PaymentMethodField[] => {
     const instr = selectedGlobalMethod?.instructions;
     if (!instr || !("fields" in instr)) return [];
-    return (instr as unknown as { fields: PaymentMethodField[] }).fields ?? [];
+    const fields =
+      (instr as unknown as { fields: PaymentMethodField[] }).fields ?? [];
+    return fields.filter((f) => !f.hidden);
   };
 
   const formatDataValue = (
@@ -144,6 +146,7 @@ export function Component() {
         await storePaymentMethodService.store(payload);
         toast.success(t("sa.created"));
       }
+
       setShowForm(false);
       setEditingUuid(null);
       load();

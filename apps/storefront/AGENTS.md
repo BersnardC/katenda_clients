@@ -77,6 +77,7 @@ El cliente es **global de Katenda** (`customers` + pivot `account_customer`), au
 | `GET /s/{slug}/orders/mine` | pedidos del cliente logueado en esa tienda (página `/account`) |
 | `GET /s/{slug}/payment-methods` | métodos de pago configurados por el merchant para la tienda (`StorePaymentMethod[]`). Se usa en `OrderDetailPage` para el selector de pago. `services/orderService.ts` → `fetchPaymentMethods()` |
 | `POST /s/{slug}/orders/{uuid}/payments` | reportar pago (`{ payment_method_id, report_data, reference?, detail? }`). `services/orderService.ts` → `reportPayment()` |
+| `POST /s/{slug}/orders/{uuid}/payment-receipt` | subir comprobante (multipart `images[]`) → `{ url }`. La URL se guarda en `report_data[key]` de `payments`. `services/orderService.ts` → `uploadPaymentReceipt()` |
 
 Stock: **solo se muestran productos con `stock > 0`**; el carrito (`lib/cart.tsx`) topea cada línea a su `stock`. Login obligatorio para pedir (sin sesión → `/account`).
 

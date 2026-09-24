@@ -75,6 +75,20 @@ export async function reportPayment(
   return clientApi.post(`/s/${slug}/orders/${uuid}/payments`, input);
 }
 
+/** Sube comprobante a storage → devuelve URL para report_data. */
+export async function uploadPaymentReceipt(
+  slug: string,
+  orderUuid: string,
+  file: File,
+): Promise<{ url: string }> {
+  const fd = new FormData();
+  fd.append("images[]", file);
+  return clientApi.postForm<{ url: string }>(
+    `/s/${slug}/orders/${orderUuid}/payment-receipt`,
+    fd,
+  );
+}
+
 export async function markOrderReceived(
   slug: string,
   uuid: string,
