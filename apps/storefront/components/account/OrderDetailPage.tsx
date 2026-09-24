@@ -35,6 +35,7 @@ import {
   payState,
 } from "@/lib/orders";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { compressImage } from "@/lib/image";
 import {
   fetchOrder,
   fetchOrderStatus,
@@ -62,6 +63,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const [storePaymentMethods, setStorePaymentMethods] = useState<StorePaymentMethod[]>([]);
   const [success, setSuccess] = useState(false);
   const [receiving, setReceiving] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const prevStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -160,11 +162,13 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
     files: Record<string, File> = {},
   ) => {
     e.preventDefault();
-    if (!selectedMethod?.id) return;
+    if (!selectedMethod?.id || reporting) return;
+    setReporting(true);
     try {
       // Subir comprobantes (type: image) a storage → URL en report_data.
       for (const [key, file] of Object.entries(files)) {
-        const { url } = await uploadPaymentReceipt(slug, order.uuid, file);
+        const compressed = await compressImage(file);
+        const { url } = await uploadPaymentReceipt(slug, order.uuid, compressed);
         reportData[key] = url;
       }
 
@@ -181,6 +185,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
           ? String((err as { message?: string }).message ?? "")
           : "";
       toast.error(message || t("store.orderError"));
+    } finally {
+      setReporting(false);
     }
   };
 
@@ -516,6 +522,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
                     t={t as unknown as (k: string, vars?: Record<string, string | number>) => string}
                     primaryCurrency={primaryCurrency}
                     secondaryCurrency={secondaryCurrency}
+                    submitting={reporting}
                     onSubmit={report}
                   />
                 </div>

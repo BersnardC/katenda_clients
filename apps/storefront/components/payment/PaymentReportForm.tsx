@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Info, ShieldCheck, Upload, X } from "lucide-react";
+import { Info, Loader2, ShieldCheck, Upload, X } from "lucide-react";
 import { fmtCurrency } from "@/lib/format";
 import type { StorePaymentMethod } from "@/lib/customerAuth";
 
@@ -35,6 +35,7 @@ export function PaymentReportForm({
   t,
   primaryCurrency,
   secondaryCurrency,
+  submitting,
   onSubmit,
 }: {
   method: StorePaymentMethod;
@@ -43,6 +44,7 @@ export function PaymentReportForm({
   t: TFunc;
   primaryCurrency: string;
   secondaryCurrency: { code: string } | null;
+  submitting?: boolean;
   onSubmit: (
     e: React.FormEvent,
     reportData: Record<string, string>,
@@ -136,6 +138,10 @@ export function PaymentReportForm({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    if (submitting) {
+      e.preventDefault();
+      return;
+    }
     const missingImage = reportFields.find(
       (f) => f.type === "image" && f.required && !files[f.key],
     );
@@ -183,7 +189,7 @@ export function PaymentReportForm({
           <div key={field.key}>
             <p className="text-sm font-medium mb-1.5">{field.label}</p>
             <div className="grid grid-cols-3 gap-2">
-              {previews[field.key] && (
+              {previews[field.key] ? (
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
                   <img
                     src={previews[field.key]}
@@ -199,21 +205,22 @@ export function PaymentReportForm({
                     <X className="size-3.5" />
                   </button>
                 </div>
-              )}
-              <button
-                type="button"
-                onClick={() => fileRefs.current[field.key]?.click()}
-                className="aspect-square rounded-2xl border-2 border-dashed border-border bg-surface grid place-items-center transition hover:border-primary/50"
-              >
-                <div className="flex flex-col items-center gap-1 text-center px-2">
-                  <div className="size-9 rounded-xl gradient-brand grid place-items-center text-primary-foreground">
-                    <Upload className="size-4" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileRefs.current[field.key]?.click()}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-border bg-surface grid place-items-center transition hover:border-primary/50"
+                >
+                  <div className="flex flex-col items-center gap-1 text-center px-2">
+                    <div className="size-9 rounded-xl gradient-brand grid place-items-center text-primary-foreground">
+                      <Upload className="size-4" />
+                    </div>
+                    <p className="text-[11px] font-semibold leading-tight">
+                      {t("payment.addImage")}
+                    </p>
                   </div>
-                  <p className="text-[11px] font-semibold leading-tight">
-                    {t("payment.addImage")}
-                  </p>
-                </div>
-              </button>
+                </button>
+              )}
             </div>
             <input
               ref={(el) => {
@@ -278,10 +285,12 @@ export function PaymentReportForm({
 
       <button
         type="submit"
-        className="w-full py-3.5 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
+        disabled={submitting}
+        className="w-full py-3.5 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
         style={{ backgroundColor: accent }}
       >
-        {t("payment.report")}
+        {submitting && <Loader2 className="size-4 animate-spin" />}
+        {submitting ? t("payment.sending") : t("payment.report")}
       </button>
 
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
