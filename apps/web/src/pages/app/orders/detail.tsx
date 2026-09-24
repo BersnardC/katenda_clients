@@ -11,6 +11,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@katenda_clients/ui/dialog";
 import { useI18n, type Key } from "@/lib/i18n";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSkeleton } from "@/components/orders/OrderSkeleton";
@@ -34,6 +39,9 @@ const STATUS_KEYS: Record<string, Key> = {
 const statusT = (t: (k: Key) => string, s: string): string =>
   t(STATUS_KEYS[s] ?? "orders.statusPending");
 
+const isImageUrl = (v: string): boolean =>
+  /\.(png|jpe?g|webp|avif|gif)(\?|#|$)/i.test(v);
+
 export function Component() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -45,6 +53,7 @@ export function Component() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const load = () => {
     orderService
@@ -135,6 +144,9 @@ export function Component() {
 
   const c = order.customer;
   const dateLabel = new Date(order.created_at).toLocaleDateString();
+  const receipts = Object.values(order.payment?.report_data ?? {}).filter(
+    isImageUrl,
+  );
 
   return (
     <>
@@ -298,6 +310,30 @@ export function Component() {
                 ${Number(order.payment.amount).toFixed(2)}
               </span>
             </div>
+            {receipts.length > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  {t("pay.receipt")}
+                </span>
+                <div className="flex gap-2">
+                  {receipts.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setPreviewUrl(url)}
+                      className="size-14 rounded-xl overflow-hidden border border-border bg-surface cursor-pointer"
+                      aria-label={t("pay.receipt")}
+                    >
+                      <img
+                        src={url}
+                        alt={t("pay.receipt")}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="pt-1 flex justify-end">
               <span
                 className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
@@ -430,6 +466,20 @@ export function Component() {
           ))}
         </ul>
       </section>
+
+      {/* Preview del comprobante */}
+      <Dialog open={!!previewUrl} onOpenChange={(o) => !o && setPreviewUrl(null)}>
+        <DialogContent className="rounded-3xl p-3 max-w-2xl">
+          <DialogTitle className="sr-only">{t("pay.receipt")}</DialogTitle>
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt={t("pay.receipt")}
+              className="w-full max-h-[80vh] object-contain rounded-2xl"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

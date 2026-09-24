@@ -475,6 +475,7 @@ export interface Payment {
   method: string;
   reference: string | null;
   detail: string | null;
+  report_data?: Record<string, string> | null;
   amount: string;
   currency_id: number | null;
   status: string;
