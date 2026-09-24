@@ -61,6 +61,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   const [notFound, setNotFound] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<StorePaymentMethod | null>(null);
   const [storePaymentMethods, setStorePaymentMethods] = useState<StorePaymentMethod[]>([]);
+  const [methodsLoaded, setMethodsLoaded] = useState(false);
   const [success, setSuccess] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -80,7 +81,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
         setStorePaymentMethods(methods);
         if (methods.length > 0) setSelectedMethod(methods[0]);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setMethodsLoaded(true));
   }, [slug, orderUuid]);
 
   // Scroll suave a la sección de pago cuando se navega con #pay.
@@ -502,7 +504,7 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
                 </p>
               )}
             </div>
-          ) : (
+          ) : storePaymentMethods.length > 0 ? (
             <>
               <PaymentMethodSelector
                 methods={storePaymentMethods}
@@ -528,7 +530,33 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
                 </div>
               )}
             </>
-          )}
+          ) : methodsLoaded ? (
+            <div className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+              <p className="text-sm text-muted-foreground">
+                {t("payment.noMethods")}{" "}
+                {waPhone ? (
+                  <a
+                    href={whatsappLink(
+                      waPhone,
+                      t("payment.noMethodsWx", { code: order.code }),
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold underline cursor-pointer hover:opacity-80"
+                    style={{ color: accent }}
+                  >
+                    <MessageCircle className="size-3.5 inline -mt-0.5 mr-1" />
+                    {t("payment.noMethodsLink")}
+                  </a>
+                ) : (
+                  <span className="font-semibold text-foreground">
+                    {t("payment.noMethodsLink")}
+                  </span>
+                )}
+                .
+              </p>
+            </div>
+          ) : null}
         </section>
       )}
 
