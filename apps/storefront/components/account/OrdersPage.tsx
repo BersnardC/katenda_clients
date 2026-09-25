@@ -123,7 +123,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   const statusLabel = t(orderStatusKey(order.status));
   const payment = payState(order.payment?.status);
 
-  const canPay = order.status === "pending" && payment === "none";
+  const canPay = order.status === "pending" && payment !== "approved";
 
   return (
     <article className="block rounded-3xl bg-card border border-border p-4 shadow-soft hover:border-foreground/20 transition">

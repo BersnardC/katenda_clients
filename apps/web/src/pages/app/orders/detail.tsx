@@ -295,7 +295,9 @@ export function Component() {
                   ? t("pay.transfer")
                   : order.payment.method === "pago_movil"
                     ? t("pay.pagoMovil")
-                    : order.payment.method}
+                    : order.payment.method === "manual"
+                      ? t("pay.manual")
+                      : order.payment.method}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -351,7 +353,8 @@ export function Component() {
                     : t("pay.rejected")}
               </span>
             </div>
-            {order.payment.status === "pending" && (
+            {order.status === "payment_reported" &&
+              order.payment.status === "pending" && (
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setPayment("approve")}
@@ -382,11 +385,10 @@ export function Component() {
         <div className="p-4 rounded-2xl bg-card border border-border shadow-soft space-y-3">
           <div className="flex flex-wrap gap-2">
             {ORDER_STATUSES.map((s) => (
-              <button
+              <span
                 key={s.value}
-                onClick={() => setStatus(s.value as OrderStatus)}
-                disabled={savingStatus || isCancelled}
-                className={`px-3 h-9 rounded-full text-xs font-semibold transition disabled:opacity-50 ${
+                aria-current={order.status === s.value ? "step" : undefined}
+                className={`px-3 h-9 inline-flex items-center rounded-full text-xs font-semibold transition ${
                   order.status === s.value
                     ? "text-white shadow-pop"
                     : "bg-muted text-muted-foreground"
@@ -398,7 +400,7 @@ export function Component() {
                 }
               >
                 {statusT(t, s.value)}
-              </button>
+              </span>
             ))}
           </div>
 
@@ -420,13 +422,24 @@ export function Component() {
 
           {!isCancelled && order.status !== "delivered" && (
             <div className="flex gap-2">
-              {nextStatus && (
+              {nextStatus && order.status !== "pending" && (
                 <button
-                  onClick={() => setStatus(nextStatus)}
-                  disabled={savingStatus}
-                  className="flex-1 h-12 rounded-2xl gradient-brand text-primary-foreground font-semibold shadow-pop"
+                  onClick={() => {
+                    if (order.status === "payment_reported") {
+                      setPayment("approve");
+                    } else {
+                      setStatus(nextStatus);
+                    }
+                  }}
+                  disabled={savingStatus || savingPayment}
+                  className="flex-1 h-12 rounded-2xl gradient-brand text-primary-foreground font-semibold shadow-pop disabled:opacity-60"
                 >
-                  {t("orders.markNext").replace("{status}", statusT(t, nextStatus).toLowerCase())}
+                  {order.status === "payment_reported"
+                    ? t("orders.approveConfirm")
+                    : t("orders.markNext").replace(
+                        "{status}",
+                        statusT(t, nextStatus).toLowerCase(),
+                      )}
                 </button>
               )}
               <button

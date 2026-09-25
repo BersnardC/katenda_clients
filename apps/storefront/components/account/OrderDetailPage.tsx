@@ -585,7 +585,8 @@ export function OrderDetailPage({ orderUuid }: { orderUuid: string }) {
   );
 }
 
-function methodLabel(_t: TFunc, method: string): string {
+function methodLabel(t: TFunc, method: string): string {
+  if (method === "manual") return t("payment.method.manual");
   return method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
