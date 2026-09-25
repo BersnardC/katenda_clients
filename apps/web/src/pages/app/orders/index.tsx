@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Calendar, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { ItemsPaginator } from "@/components/ItemsPaginator";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderCardSkeleton } from "@/components/orders/OrderSkeleton";
@@ -40,15 +41,19 @@ export function Component() {
     return toISODate(new Date(Date.now() - DAYS_TO(d) * 86400000));
   };
 
+  // Misma query para la carga inicial, el "cargar más" y el loop de refresh:
+  // siempre con los filtros actuales del usuario (status/search/from).
+  const fetchPage = (page: number) =>
+    orderService.index({
+      page,
+      per_page: PAGE_SIZE,
+      status,
+      search: q || undefined,
+      from: fromFor(dateRange),
+    });
+
   const load = useCallback(() => {
-    orderService
-      .index({
-        page: 1,
-        per_page: PAGE_SIZE,
-        status,
-        search: q || undefined,
-        from: fromFor(dateRange),
-      })
+    fetchPage(1)
       .then((res) => {
         setOrders(res.data);
         setMeta(res.meta);
@@ -64,17 +69,26 @@ export function Component() {
     load();
   }, [load]);
 
+  // Loop: refresco silencioso cada 60s con los filtros actuales del usuario.
+  // Solo page 1 (recargar page-1 truncaría la lista del "cargar más"; si el
+  // usuario paginó, el loop se pausa) y nunca mientras carga más resultados.
+  // Sin toasts: solo datos frescos. Al salir de /orders se desmonta (0 req).
+  useAutoRefresh({
+    key: "orders:list",
+    enabled: !!meta && !loading && !loadingMore && meta.current_page === 1,
+    intervalMs: 60_000,
+    initialDelayMs: 60_000,
+    load: () => fetchPage(1),
+    onData: (res) => {
+      setOrders(res.data);
+      setMeta(res.meta);
+    },
+  });
+
   const loadMore = () => {
     if (loadingMore || !meta || meta.current_page >= meta.last_page) return;
     setLoadingMore(true);
-    orderService
-      .index({
-        page: meta.current_page + 1,
-        per_page: PAGE_SIZE,
-        status,
-        search: q || undefined,
-        from: fromFor(dateRange),
-      })
+    fetchPage(meta.current_page + 1)
       .then((res) => {
         setOrders((prev) => [...prev, ...res.data]);
         setMeta(res.meta);

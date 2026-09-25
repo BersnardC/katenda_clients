@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,10 +17,16 @@ import {
   DialogTitle,
 } from "@katenda_clients/ui/dialog";
 import { useI18n, type Key } from "@/lib/i18n";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSkeleton } from "@/components/orders/OrderSkeleton";
 import { orderService } from "@/services/orderService";
-import { ORDER_STATUSES, STATUS_FLOW, statusColor } from "@/lib/orders";
+import {
+  isAwaitingCustomer,
+  ORDER_STATUSES,
+  STATUS_FLOW,
+  statusColor,
+} from "@/lib/orders";
 import type { Order, OrderStatus } from "@/types/models";
 
 const errMsg = (e: unknown, fallback: string) =>
@@ -54,6 +60,10 @@ export function Component() {
   const [savingNote, setSavingNote] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Última acción manual (aprobar/rechazar/cambiar estado/guardar nota):
+  // el polling ignora datos si pasó menos de 3s (evita que un refresh
+  // tardío revierta la acción recién hecha).
+  const lastActionAtRef = useRef(0);
 
   const load = () => {
     orderService
@@ -73,6 +83,7 @@ export function Component() {
 
   const setStatus = async (s: OrderStatus) => {
     if (savingStatus) return;
+    lastActionAtRef.current = Date.now();
     setSavingStatus(true);
     try {
       await orderService.updateStatus(uuid, s);
@@ -89,6 +100,7 @@ export function Component() {
 
   const saveNote = async () => {
     if (savingNote) return;
+    lastActionAtRef.current = Date.now();
     setSavingNote(true);
     try {
       await orderService.updateNote(uuid, note.trim());
@@ -102,6 +114,7 @@ export function Component() {
 
   const setPayment = async (action: "approve" | "reject") => {
     if (savingPayment) return;
+    lastActionAtRef.current = Date.now();
     setSavingPayment(true);
     try {
       if (action === "approve") {
@@ -118,6 +131,44 @@ export function Component() {
       setSavingPayment(false);
     }
   };
+
+  // Polling: bucle de 60s solo cuando el que mueve el pedido es el CLIENTE —
+  // `pending` (reporta el pago / ve el rechazo) y `shipped` (marca recibido).
+  // En el resto de estados el actor es el propio comercio (ya en esta vista)
+  // o es terminal → sin peticiones. Catch-then-stop: al cambiar el estado el
+  // gate se apaga solo tras aplicar el cambio.
+  useAutoRefresh({
+    key: `order:${uuid}`,
+    enabled:
+      !!order &&
+      !loading &&
+      !error &&
+      isAwaitingCustomer(order.status) &&
+      !savingStatus &&
+      !savingPayment,
+    intervalMs: 60_000,
+    initialDelayMs: 60_000,
+    load: () => orderService.show(uuid).then((res) => res.data),
+    onData: (fresh) => {
+      if (Date.now() - lastActionAtRef.current < 3000) return;
+      if (order && order.status !== fresh.status) {
+        const msg = t("orders.statusChanged")
+          .replace("{code}", order.code)
+          .replace("{status}", statusT(t, fresh.status));
+        if (fresh.status === "cancelled") {
+          toast.error(msg);
+        } else if (
+          fresh.status === "pending" ||
+          fresh.status === "payment_reported"
+        ) {
+          toast.info(msg);
+        } else {
+          toast.success(msg);
+        }
+      }
+      setOrder(fresh);
+    },
+  });
 
   if (loading) return <OrderDetailSkeleton />;
 

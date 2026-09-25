@@ -111,6 +111,13 @@ Solo vía hooks de `hooks/useAccount.ts`: `usePlanLimit(feature)`, `useSubscript
 ### Recursos compartidos obligatorios (no inventar variantes)
 `SkeletonView`/`SkeletonForm` (`components/skeletons.tsx`), `ItemsPaginator`, `ConfirmDeleteDialog`, `Dialog`/`AlertDialog`/`Switch` (deep imports `@katenda_clients/ui/*`), `useI18n`, `DynamicIcon`, `cn`, `slugify`, `dataUrlToFile` (`lib/utils.ts`).
 
+### Polling / refresco automático
+Estándar: **`hooks/useAutoRefresh.ts` (web)** y **`lib/useAutoRefresh.ts` (storefront)** — mismo hook, copia entre apps (precedente: `lib/image.ts`). Opción `intervalMs` = bucle real (60s); sin ella solo refresca al montar + al volver de pestaña oculta (≥10s). El tick se salta con la pestaña oculta y los errores se ignoran en silencio.
+
+- **web `orders/index`** (listado): loop **continuo** 60s con los filtros actuales del usuario (vía `fetchPage(1)`), silencioso (sin toasts), solo `meta.current_page === 1` (si el usuario paginó, se pausa — no truncar el "cargar más") y `!loadingMore`.
+- **web `orders/:uuid`** (detalle): loop **solo esperando al cliente** — `isAwaitingCustomer()` = `pending` (reporta pago / ve rechazo) y `shipped` (marca recibido); en el resto el actor es el propio comercio → sin peticiones. *Catch-and-stop*: al cambiar el estado, el último tick aplica el cambio y el gate se apaga. Guard anti-race: ignora el poll si pasó ≤3s de una acción manual (`lastActionAtRef`). Toast `orders.statusChanged` al cambiar (info: pending/payment_reported · error: cancelled · success: resto).
+- **storefront**: **sin loop** — refresco único a 60s + visibilidad en `OrderDetailPage` (`fetchOrderStatus` ligero) con gate `isPollableOrder` (`pending/payment_reported/confirmed/preparing`). `OrdersPage` sin refresh.
+
 ### Validaciones y errores
 - Cliente: solo lo esencial (campo requerido, formatos) → `toast.error` con clave i18n.
 - Backend: 422/409/429 llegan con `message` → `toast.error(errMsg(err, fallback))`.

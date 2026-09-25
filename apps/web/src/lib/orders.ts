@@ -22,3 +22,8 @@ export type OrderStatusKey = (typeof ORDER_STATUSES)[number]["value"];
 
 export const statusColor = (status: string): string =>
   ORDER_STATUSES.find((s) => s.value === status)?.color ?? "#F7B267";
+
+// Estados donde el que mueve el pedido es el CLIENTE (reporta el pago /
+// marca recibido): el detalle solo refresca en estos (catch-then-stop).
+export const isAwaitingCustomer = (status: string): boolean =>
+  status === "pending" || status === "shipped";
