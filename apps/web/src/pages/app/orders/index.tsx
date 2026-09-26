@@ -14,10 +14,10 @@ import type { PaginationMeta } from "@/types/pagination";
 
 const PAGE_SIZE = 20;
 
-type DateFilter = "all" | "7d" | "30d" | "90d";
+type DateFilter = "hoy" | "7d" | "30d";
 
 const DAYS_TO = (d: DateFilter): number =>
-  d === "7d" ? 7 : d === "30d" ? 30 : d === "90d" ? 90 : 0;
+  d === "7d" ? 7 : d === "30d" ? 30 : 1;
 
 const toISODate = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -29,16 +29,21 @@ export function Component() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateFilter>("all");
+  const [dateRange, setDateRange] = useState<DateFilter>("hoy");
   const [serverKey, setServerKey] = useState(0);
 
-  // Los filtros viajan al backend (?status=&search=&from=&to=). Se dispara un
-  // reload cuando cambian (server paginated).
+  // Los filtros viajan al backend (?status=&search=&from=). Se dispara un
+  // reload cuando cambian (server paginado). La búsqueda ignora fechas
+  // (regla backend) y aquí no se envía from cuando hay search activo.
   const reload = useCallback(() => setServerKey((k) => k + 1), []);
 
-  const fromFor = (d: DateFilter): string | undefined => {
-    if (d === "all") return undefined;
-    return toISODate(new Date(Date.now() - DAYS_TO(d) * 86400000));
+  const dateParams = (): { from?: string } => {
+    if (q.trim() !== "") return {};
+    const dt = new Date(Date.now() - DAYS_TO(dateRange) * 86400000);
+    if (dateRange === "hoy") {
+      return { from: dt.toISOString().slice(0, 19).replace("T", " ") };
+    }
+    return { from: toISODate(dt) };
   };
 
   // Misma query para la carga inicial, el "cargar más" y el loop de refresh:
@@ -49,7 +54,7 @@ export function Component() {
       per_page: PAGE_SIZE,
       status,
       search: q || undefined,
-      from: fromFor(dateRange),
+      ...dateParams(),
     });
 
   const load = useCallback(() => {
@@ -172,17 +177,13 @@ const STATUS_LABELS: Record<string, string> = {
         <div className="flex items-center gap-2">
           <Calendar className="size-4 text-muted-foreground shrink-0" />
           <div className="flex gap-2 overflow-x-auto">
-            {(["all", "7d", "30d", "90d"] as const).map((d) => (
+            {(["hoy", "7d", "30d"] as const).map((d) => (
               <FilterChip
                 key={d}
                 active={dateRange === d}
-                label={
-                  d === "all"
-                    ? t("orders.filterDate")
-                    : (t as (k: string) => string)(
-                        `orders.filter${d}`,
-                      )
-                }
+                label={(t as (k: string) => string)(
+                  d === "hoy" ? "orders.filterToday" : `orders.filter${d}`,
+                )}
                 onClick={() => {
                   setDateRange(d);
                   reload();

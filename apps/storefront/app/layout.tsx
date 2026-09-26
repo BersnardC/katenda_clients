@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { ThemeInit } from "@/components/theme-init";
 
 export const metadata: Metadata = {
   title: "Katenda Store — Compra online y pide por WhatsApp",
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#12B886",
 };
-
-const THEME_INIT_SCRIPT = `(function(){try{if(localStorage.getItem("katenda.theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -30,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
         />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeInit />
       </head>
       <body>
         <Providers>{children}</Providers>
